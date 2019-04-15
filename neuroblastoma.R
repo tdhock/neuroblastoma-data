@@ -62,11 +62,11 @@ with(neuroblastomaProcessed, writeXZ(
   min.log.lambda, max.log.lambda,
   loss)],
   outputs=data.table(
-    sequenceID=rownames(target.mat),
+    sequenceID=newID(target.mat),
     min.log.lambda=target.mat[, "min.L"],
     max.log.lambda=target.mat[, "max.L"]),
   inputs=data.table(
-    sequenceID=rownames(feature.mat),
+    sequenceID=newID(feature.mat),
     feature.mat)))
 glob <- "data/*/*"
 system(paste("du -ms", glob))
