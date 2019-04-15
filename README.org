@@ -1,0 +1,107 @@
+Neuroblastoma data set
+
+This repo provides xz-compressed text/csv files of two neuroblastoma
+data sets, which are also available on the [[https://cloud.r-project.org/web/packages/neuroblastoma/][CRAN]].
+
+There are two data sets, data/systematic and data/detailed. Each data
+set has the following files, with the sequenceID column used to link
+them, and the following columns:
+- profiles: raw/noisy sequence data in which to look for changepoints.
+  - position: position on chromosome (x axis in plot of sequence data)
+  - signal: noisy data (y axis on plot of sequence data)
+- outputs: interval of log(penalty) values that achieves min label
+  errors, i.e. all log(penalty) values in (min.log.lambda,
+  max.log.lambda) result in changepoint models with min label
+  errors. This is the output/Y value used in the censored regression
+  problem.
+- labels: regions which an expert has labeled as containing a known
+  number of changepoints.
+  - labelStart/labelEnd columns define the region.
+  - annotation: the expert-provided code word that implies the
+    number of changes in the region (penaltyLearning::change.labels
+    is used to convert to the following columns).
+  - max.changes/min.changes: the min/max number of changes that must
+    occur in this region, according to the expert who created the
+    label. Number of predicted changes < min.changes is a false
+    negative (fn); max.changes < number of predicted changes is a
+    false positive (fp).
+  - color: suggested color to use when plotting the label on top of
+    the profile/sequence data.
+  - possible.fn/possible.fp: 1 if fn/fp possible in this label, 0
+    otherwise.
+- errors: a description of the number of incorrect labels, as a
+  function of log(penalty) values, can be used to evaluate prediction
+  accuracy in terms of number of incorrectly predicted labels, or area
+  under the ROC curve.
+  - n.segments: model size (n.segments = n.changes +1).
+  - possible.fp/fp/possible.fn/fn: possible and predicted false
+    positive/negative labels for this model.
+  - labels/errors: total labels and number of incorrectly predicted
+    labels (errors = fp + fn).
+  - min.log.lambda/max.log.lambda: interval of log(penalty) values for
+    which model size = n.segments is selected.
+  - loss: total squared error
+- inputs: numeric feature matrix, with one row for each labeled
+  sequenceID, and one column for every feature that should/can be used
+  to predict the log(penalty) value for that sequenceID.
+
+** Systematic / original labels
+
+[[file:data/systematic/]]
+
+The original neuroblastoma data set has 3418 labeled
+sequences. SequenceIDs are of the form profile_chrZ where profile is
+the patient ID number (profile.id column in the neuroblastoma data
+set) and Z = chromosome column in the neuroblastoma data set. Z is in
+the set {1, 2, 3, 4, 11, 17}, and there is a max of one label per
+sequence. Three interesting cross-validation experiments / prediction
+problems, from hard to easy:
+- Hard: hold out an entire chromosome as a test set, e.g. chr17 is test set,
+  others are train set.
+- hold out several profile.id numbers as a test set, train on other
+  profiles. Hard: define test set as all sequenceIDs with more/less
+  than 1000 data points, and train set as all other sequenceIDs. Easy:
+  randomly select a subset of profile.id numbers as a test set, train
+  on other profiles.
+- Easy: randomly select sequenceIDs as a test set, train on other
+  sequenceIDs.
+Data files were derived from
+#+BEGIN_SRC R
+  data(neuroblastoma, package="neuroblastoma")
+  data(neuroblastomaProcessed, package="penaltyLearning")
+#+END_SRC
+
+** Detailed 
+
+[[file:data/detailed/]]
+
+So far there are only the labels and profiles files for this data
+set. TODO compute other files.
+
+This data set is called "detailed" because some sequences have more
+than one label:
+#+BEGIN_SRC R
+  data.table::fread("xzcat data/detailed/labels.csv.xz")[, .(
+    labels=.N), by=sequenceID][, .(
+      sequences=.N), by=list(labels)]
+#+END_SRC
+
+#+BEGIN_SRC 
+> data.table::fread("xzcat data/detailed/labels.csv.xz")[, .(
++   labels=.N), by=sequenceID][, .(
++     sequences=.N), by=list(labels)]
+   labels sequences
+1:      1      3342
+2:      2       196
+3:      3       161
+4:      4        19
+5:      5         9
+6:      6         2
+7:      9         1
+> 
+#+END_SRC
+
+** 15 Apr 2019
+
+[[file:neuroblastoma.R]] script creates xz-compressed text files
+data/*/*.xz from data sets in R packages.
