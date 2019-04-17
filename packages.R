@@ -1,3 +1,4 @@
+options(namedCapture.engine="PCRE")
 ### Write down what package versions work with your R code, and
 ### attempt to download and load those packages. The first argument is
 ### the version of R that you used, e.g. "3.0.2" and then the rest of
@@ -61,6 +62,7 @@ works_with_R(
   "3.5.1",
   ggplot2="3.1.0",
   data.table="1.11.8",
+  doParallel="1.0.14",
   penaltyLearning="2018.9.4")
 library(survival)
 if(!requireNamespace("bams")){
@@ -69,4 +71,11 @@ if(!requireNamespace("bams")){
     download.file(u, "bams_1.6.tar.gz")
   }
   install.packages("bams_1.6.tar.gz", type="source", repos=NULL)
+}
+if(FALSE){
+requireGitHub::requireGitHub_package(
+  "aldro61",
+  "mmit/Rpackage",
+  "360bff413fbf209d3283b71b1c52bdfd7ab2c81a",
+  "mmit")
 }
