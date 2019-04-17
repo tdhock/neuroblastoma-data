@@ -1,7 +1,5 @@
 source("packages.R")
 
-future::plan("multiprocess")
-
 data.dir <- file.path("data", "systematic")
 data.list <- list()
 for(data.type in c("inputs", "outputs")){

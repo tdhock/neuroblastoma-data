@@ -102,9 +102,24 @@ than one label:
 > 
 #+END_SRC
 
+** 17 Apr 2019
+
+[[file:figure-baseline.R]] makes
+
+[[file:figure-baseline.png]]
+
+[[file:baseline.R]] computes baseline.csv accuracy for constant and
+L1-regularized linear model in random data ordering, several train set
+sizes. e.g. [[file:data/systematic/cv/chrom/testFolds/1/randomTrainOrderings/1/baseline.csv]]
+
+[[file:randomOrderings.R]] creates 5 random orderings of the train data
+for each fold, saved in
+e.g. [[file:data/systematic/cv/chrom/testFolds/1/randomTrainOrderings/1/order.csv]]
+
 ** 16 Apr 2019
 
-Begin work on [[file:cv.R]] which should create files with train/test splits.
+[[file:cv.R]] which should creates folds.csv files with train/test
+splits, e.g. [[file:data/systematic/cv/chrom/folds.csv]]
 
 ** 15 Apr 2019
 
