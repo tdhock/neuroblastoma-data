@@ -57,7 +57,7 @@ the set {1, 2, 3, 4, 11, 17}, and there is a max of one label per
 sequence. Three interesting cross-validation experiments / prediction
 problems, from hard to easy:
 - Hard: hold out an entire chromosome as a test set, e.g. chr17 is test set,
-  others are train set.
+  others are train set, e.g. 
 - hold out several profile.id numbers as a test set, train on other
   profiles. Hard: define test set as all sequenceIDs with more/less
   than 1000 data points, and train set as all other sequenceIDs. Easy:
