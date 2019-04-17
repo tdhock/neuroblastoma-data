@@ -23,14 +23,17 @@ for(set.i in seq_along(labels.xz.vec)){
     fold[paste(col.vec)]
   }
   fun.list <- list(
+    chrom=function(dt){
+      as.integer(factor(dt$sequenceID.chrom))
+    },
     profileSize=function(dt){
       ifelse(
         dt$sequenceID.profileID %in% big.dt$profile.id, 1, 2)
-    }, chrom=function(dt){
-      as.integer(factor(dt$sequenceID.chrom))
-    }, profileID=function(dt){
+    },
+    profileID=function(dt){
       randcol(dt, "sequenceID.profileID")
-    }, sequenceID=function(dt){
+    },
+    sequenceID=function(dt){
       randcol(dt, "sequenceID")
     })
   for(split.name in names(fun.list)){
