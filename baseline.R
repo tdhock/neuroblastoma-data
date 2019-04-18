@@ -12,12 +12,12 @@ for(data.type in c("inputs", "outputs")){
 
 order.csv.vec <- Sys.glob(file.path(
   data.dir, "cv", "*", "testFolds",
-  "*", "randomTrainOrderings", "*", "order.csv"))
+  "*", "randomTrainOrderings", "*", "order.csv"))[76:80]
 
-## profileSize testFold=1:3 is train set size from 36 to 96.
-order.i <- 67
+## profileSize testFold=1:3 is test set size from 36 to 96, indices 61 to 75.
+future::plan("multiprocess")
 
-for(order.i in seq_along(order.csv.vec)){
+future.apply::future_lapply(seq_along(order.csv.vec), function(order.i){
   order.csv <- order.csv.vec[[order.i]]
   baseline.csv <- file.path(dirname(order.csv), "baseline.csv")
   if(file.exists(baseline.csv)){
@@ -49,14 +49,17 @@ for(order.i in seq_along(order.csv.vec)){
       nrow(order.dt))
     train.size.vec <- s[s <= nrow(order.dt)]
     result.list <- list()
-    for(size.i in seq_along(train.size.vec)){
+    size.i.vec <- seq_along(train.size.vec)
+    ##size.i.vec <- length(train.size.vec)
+    for(size.i in size.i.vec){
       train.size <- train.size.vec[[size.i]]
-      train.i <- 1:train.size
+      train.names <- sort(rownames(set.list$train$inputs)[1:train.size])
+      print(head(train.names))
       cat(sprintf(
         "%4d / %4d files %4d / %4d trainSize=%d\n",
         order.i, length(order.csv.vec), size.i, length(train.size.vec), train.size))
-      X.train <- set.list$train$inputs[train.i,]
-      y.train <- set.list$train$outputs[train.i,]
+      X.train <- set.list$train$inputs[train.names,]
+      y.train <- set.list$train$outputs[train.names,]
       (finite.limits <- colSums(is.finite(y.train)))
       one.pred <- function(x)rep(x, nrow(set.list$test$inputs))
       na.pred <- one.pred(NA)
@@ -100,13 +103,13 @@ for(order.i in seq_along(order.csv.vec)){
           penaltyLearning::targetIntervalResidual(
             set.list$test$outputs, pred.vec)
         }
-        result.list[[paste(size.i, model)]] <- data.table(
+        result.list[[paste(size.i, model)]] <- print(data.table(
           train.size, model,
-          accuracy.percent=mean(res.vec==0)*100)
+          accuracy.percent=mean(res.vec==0)*100))
       }#for(model
     }#for(size.i
     (result <- do.call(rbind, result.list))
     fwrite(result, baseline.csv)
   }
-}
+})
 

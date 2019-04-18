@@ -62,7 +62,9 @@ works_with_R(
   "3.5.1",
   ggplot2="3.1.0",
   data.table="1.11.8",
-  doParallel="1.0.14",
+  directlabels="2018.5.22",
+  ##doParallel="1.0.14",
+  future="1.11.1.1",
   penaltyLearning="2019.4.18")
 library(survival)
 if(!requireNamespace("bams")){

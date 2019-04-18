@@ -23,7 +23,11 @@ most.train <- result[, {
     max.accuracy=max(accuracy.percent)
   )]
 }, by=list(cv.type, test.fold, model)]
-most.train[min.accuracy != max.accuracy]
+(bad <- most.train[min.accuracy != max.accuracy])
+if(nrow(bad)){
+  print(result[bad, on=list(cv.type, test.fold, model)][train.size==max(train.size)])
+  stop("some accuracy numbers not equal")
+}
 
 if(FALSE){
   unlink(Sys.glob(
@@ -37,8 +41,12 @@ gg <- ggplot()+
   geom_line(aes(
     train.size, accuracy.percent, color=model, group=paste(model,seed)),
     data=result)+
-  scale_x_log10()
+  scale_x_log10(limits=c(NA, 30000), breaks=c(
+    range(result$train.size),
+    10^(1:3)))+
+  coord_cartesian(ylim=c(80, 100))
+(dl <- directlabels::direct.label(gg, "last.polygons"))
 
 png("figure-baseline.png", 8, 6, units="in", res=100)
-print(gg)
+print(dl)
 dev.off()
