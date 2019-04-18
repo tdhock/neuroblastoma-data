@@ -4,6 +4,7 @@ data(neuroblastoma, package="neuroblastoma")
 big.dt <- data.table(neuroblastoma$profiles)[, list(data=.N), by=list(profile.id, chromosome)][, list(min.data=min(data), max.data=max(data)), by=list(profile.id)][max.data==max(max.data)]
 
 labels.xz.vec <- Sys.glob("data/*/labels.csv.xz")
+N.folds <- 6
 for(set.i in seq_along(labels.xz.vec)){
   labels.xz <- labels.xz.vec[[set.i]]
   labels.dt <- fread(cmd=paste("xzcat", labels.xz))
@@ -14,7 +15,7 @@ for(set.i in seq_along(labels.xz.vec)){
       "_",
       chrom="chr.*")))
   table(match.dt$sequenceID.chrom)
-  randcol <- function(dt, col.name, n.folds=6){
+  randcol <- function(dt, col.name, n.folds=N.folds){
     unique.folds <- 1:n.folds
     col.vec <- dt[[col.name]]
     u.vec <- unique(col.vec)
@@ -27,7 +28,7 @@ for(set.i in seq_along(labels.xz.vec)){
       as.integer(factor(dt$sequenceID.chrom))
     },
     profileSize=function(dt){
-      ifelse(
+      randcol(dt, "sequenceID.profileID", N.folds/2)*ifelse(
         dt$sequenceID.profileID %in% big.dt$profile.id, 1, 2)
     },
     profileID=function(dt){
