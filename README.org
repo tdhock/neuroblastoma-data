@@ -108,6 +108,8 @@ than one label:
 
 [[file:figure-baseline.png]]
 
+[[file:figure-baseline-lines.png]]
+
 [[file:baseline.R]] computes baseline.csv accuracy for constant and
 L1-regularized linear model in random data ordering, several train set
 sizes. e.g. [[file:data/systematic/cv/chrom/testFolds/1/randomTrainOrderings/1/baseline.csv]]

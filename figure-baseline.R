@@ -47,6 +47,32 @@ gg <- ggplot()+
   coord_cartesian(ylim=c(80, 100))
 (dl <- directlabels::direct.label(gg, "last.polygons"))
 
+png("figure-baseline-lines.png", 8, 6, units="in", res=100)
+print(dl)
+dev.off()
+
+stats.dt <- result[, list(
+  mean=mean(accuracy.percent),
+  sd=sd(accuracy.percent)
+  ), by=list(cv.type, test.fold, train.size, model)]
+gg <- ggplot()+
+  theme_bw()+
+  theme(panel.margin=grid::unit(0, "lines"))+
+  facet_grid(cv.type ~ test.fold, labeller=label_both)+
+  geom_line(aes(
+    train.size, mean, color=model, group=model),
+    data=stats.dt)+
+  geom_ribbon(aes(
+    train.size, ymin=mean-sd, ymax=mean+sd, fill=model, group=model),
+    alpha=0.5,
+    data=stats.dt)+
+  ylab("Percent correctly predicted intervals")+
+  scale_x_log10(limits=c(NA, 30000), breaks=c(
+    range(result$train.size),
+    10^(1:3)))+
+  coord_cartesian(ylim=c(80, 100))
+(dl <- directlabels::direct.label(gg, "last.polygons"))
+
 png("figure-baseline.png", 8, 6, units="in", res=100)
 print(dl)
 dev.off()
