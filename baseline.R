@@ -14,7 +14,7 @@ order.csv.vec <- Sys.glob(file.path(
   data.dir, "cv", "*", "testFolds",
   "*", "randomTrainOrderings", "*", "order.csv"))
 
-## 66 to 70 are testFold=2, small max train set size.
+## profileSize testFold=1:3 is train set size from 36 to 96.
 order.i <- 67
 
 for(order.i in seq_along(order.csv.vec)){

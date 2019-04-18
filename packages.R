@@ -63,7 +63,7 @@ works_with_R(
   ggplot2="3.1.0",
   data.table="1.11.8",
   doParallel="1.0.14",
-  penaltyLearning="2019.2.27")
+  penaltyLearning="2019.4.18")
 library(survival)
 if(!requireNamespace("bams")){
   if(!file.exists("bams_1.6.tar.gz")){

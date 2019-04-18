@@ -28,8 +28,8 @@ for(set.i in seq_along(labels.xz.vec)){
       as.integer(factor(dt$sequenceID.chrom))
     },
     profileSize=function(dt){
-      randcol(dt, "sequenceID.profileID", N.folds/2)*ifelse(
-        dt$sequenceID.profileID %in% big.dt$profile.id, 1, 2)
+      randcol(dt, "sequenceID.profileID", N.folds/2)+3*ifelse(
+        dt$sequenceID.profileID %in% big.dt$profile.id, 0, 1)
     },
     profileID=function(dt){
       randcol(dt, "sequenceID.profileID")
