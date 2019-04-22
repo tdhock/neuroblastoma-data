@@ -12,7 +12,7 @@ for(data.type in c("inputs", "outputs")){
 
 order.csv.vec <- Sys.glob(file.path(
   data.dir, "cv", "*", "testFolds",
-  "*", "randomTrainOrderings", "*", "order.csv"))[76:80]
+  "*", "randomTrainOrderings", "*", "order.csv"))
 
 ## profileSize testFold=1:3 is test set size from 36 to 96, indices 61 to 75.
 future::plan("multiprocess")
