@@ -102,6 +102,26 @@ than one label:
 > 
 #+END_SRC
 
+** 22 Apr 2019
+TODOs: 
+- non-redundant features, [[file:data/systematic/nonredundant.csv]]
+  computed via [[file:nonredundant.R]]
+- order files for each pair selected at first.
+- accuracy file, prediction file for bayesian model?
+- write down legend for baseline models, the suffix integer is the
+  number of features used for prediction:
+  - baseline_0: features completely ignored, prediction is the best
+    constant value for the train labels.
+  - unsup_BIC_1: labels completely ignored, prediction is always the
+    BIC penalty = log(number of data points on the sequence). 
+  - unreg_linear_1: labels used to infer slope/weight and
+    intercept/bias in linear model with single feature (same feature
+    as used in BIC penalty), log(penalty_i) = bias + weight * log(log(data_i)).
+  - unreg_linear_2: same as above but with an additional
+    feature/weight for a variance estimate of the noisy seq data.
+  - L1reg_linear_117: log(penalty_i) = bias + w^T x_i, with 117
+    features/weights learned by minimizing a L1 regularized cost
+    function.
 ** 17 Apr 2019
 
 [[file:figure-baseline.R]] makes
