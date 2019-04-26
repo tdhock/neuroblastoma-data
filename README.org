@@ -102,6 +102,11 @@ than one label:
 > 
 #+END_SRC
 
+** 26 Apr 2019
+[[file:figure-random-linear-selection.R]] makes
+
+[[file:figure-random-linear-selection.png]]
+
 ** 22 Apr 2019
 TODOs: 
 - non-redundant features, [[file:data/systematic/nonredundant.csv]]

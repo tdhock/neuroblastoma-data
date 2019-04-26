@@ -12,12 +12,14 @@ for(data.type in c("inputs", "outputs")){
 
 order.csv.vec <- Sys.glob(file.path(
   data.dir, "cv", "*", "testFolds",
-  "*", "randomTrainOrderings", "*", "order.csv"))
+  "*", "*", "*", "order.csv"))
+baseline.csv.vec <- sub("order.csv$", "baseline.csv", order.csv.vec)
+order.i.vec <- seq_along(order.csv.vec)[!file.exists(baseline.csv.vec)]
 
 ## profileSize testFold=1:3 is test set size from 36 to 96, indices 61 to 75.
 future::plan("multiprocess")
 
-future.apply::future_lapply(seq_along(order.csv.vec), function(order.i){
+future.apply::future_lapply(order.i.vec, function(order.i){
   order.csv <- order.csv.vec[[order.i]]
   baseline.csv <- file.path(dirname(order.csv), "baseline.csv")
   if(file.exists(baseline.csv)){

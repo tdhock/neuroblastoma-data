@@ -1,3 +1,5 @@
+figure-random-linear-selection.png: figure-random-linear-selection.R
+	R --vanilla < $<
 data/systematic/cv/sequenceID/testFolds/6/randomTrainOrderings/5/baseline.csv: baseline.R
 	R --vanilla < $<
 figure-baseline.png: figure-baseline.R
