@@ -102,6 +102,18 @@ than one label:
 > 
 #+END_SRC
 
+** 14 May 2019
+
+[[file:figure-random-gp-lin.R]] makes
+
+[[file:figure-random-gp-lin.png]]
+
+[[file:figure-random-gp-lin-mean.png]]
+
+[[file:figure-random-gp-lin-diff.png]]
+
+[[file:figure-random-gp-lin-diff-mean.png]]
+
 ** 26 Apr 2019
 [[file:figure-random-linear-selection.R]] makes
 

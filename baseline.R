@@ -65,12 +65,13 @@ future.apply::future_lapply(order.i.vec, function(order.i){
       (finite.limits <- colSums(is.finite(y.train)))
       one.pred <- function(x)rep(x, nrow(set.list$test$inputs))
       na.pred <- one.pred(NA)
+      X.logn <- X.train[, "log2.n", drop=FALSE]
       pred.list <- list(
         baseline_0=one.pred(baseline.df$pred[train.size]),
         unsup_BIC_1=as.numeric(set.list$test$inputs[, "log2.n"]),
-        unreg_linear_1=if(all(0 < finite.limits)){
+        unreg_linear_1=if(all(0 < finite.limits) && 1 < length(table(X.logn))){
           fit <- penaltyLearning::IntervalRegressionUnregularized(
-            X.train[, "log2.n", drop=FALSE], y.train)
+            X.logn, y.train)
           as.numeric(fit$predict(set.list$test$inputs))
         }else{
           na.pred
