@@ -104,15 +104,16 @@ than one label:
 
 ** 14 May 2019
 
-[[file:figure-random-gp-lin.R]] makes
+[[file:figure-random-gp-lin.R]] makes the following figures (lines for
+median, shaded bands for quartiles).
 
 [[file:figure-random-gp-lin.png]]
 
-[[file:figure-random-gp-lin-mean.png]]
+[[file:figure-random-gp-lin-median.png]]
 
 [[file:figure-random-gp-lin-diff.png]]
 
-[[file:figure-random-gp-lin-diff-mean.png]]
+[[file:figure-random-gp-lin-diff-median.png]]
 
 ** 26 Apr 2019
 [[file:figure-random-linear-selection.R]] makes

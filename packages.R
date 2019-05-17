@@ -1,4 +1,3 @@
-options(namedCapture.engine="PCRE")
 ### Write down what package versions work with your R code, and
 ### attempt to download and load those packages. The first argument is
 ### the version of R that you used, e.g. "3.0.2" and then the rest of
@@ -59,12 +58,12 @@ options(repos=c(
           "http://cloud.r-project.org",
           "http://cran.r-project.org"))
 works_with_R(
-  "3.5.1",
-  ggplot2="3.1.0",
-  data.table="1.11.8",
+  "3.6.0",
+  ggplot2="3.1.1",
+  data.table="1.12.2",
   directlabels="2018.5.22",
   ##doParallel="1.0.14",
-  future="1.11.1.1",
+  future="1.13.0",
   penaltyLearning="2019.4.18")
 library(survival)
 if(!requireNamespace("bams")){
@@ -75,9 +74,13 @@ if(!requireNamespace("bams")){
   install.packages("bams_1.6.tar.gz", type="source", repos=NULL)
 }
 if(FALSE){
-requireGitHub::requireGitHub_package(
-  "aldro61",
-  "mmit/Rpackage",
-  "360bff413fbf209d3283b71b1c52bdfd7ab2c81a",
-  "mmit")
+  requireGitHub::requireGitHub_package(
+    "aldro61",
+    "mmit/Rpackage",
+    "b9d77ec604185725b51f13ec3922a6ba59bda145",
+    "mmit")
+}else{
+  if(!require(mmit)){
+    system("git clone https://github.com/aldro61/mmit.git && R CMD INSTALL mmit/Rpackage && rm -rf mmit")
+  }
 }
