@@ -102,6 +102,10 @@ than one label:
 > 
 #+END_SRC
 
+
+TODO complete [[file:feature-learning-benchmark.R]] to copy other data
+sets into this format.
+
 ** 14 May 2019
 
 [[file:figure-random-gp-lin.R]] makes the following figures (lines for
