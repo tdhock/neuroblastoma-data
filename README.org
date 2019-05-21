@@ -103,8 +103,12 @@ than one label:
 #+END_SRC
 
 
-TODO complete [[file:feature-learning-benchmark.R]] to copy other data
-sets into this format.
+ [[file:feature-learning-benchmark.R]] copies other data
+sets into this format, e.g.
+- [[file:data/ATAC_JV_adipose/inputs.csv.xz]]
+- [[file:data/ATAC_JV_adipose/outputs.csv.xz]]
+- [[file:data/ATAC_JV_adipose/evaluation.csv.xz]]
+- [[file:data/ATAC_JV_adipose/cv/equal_labels/folds.csv]]
 
 ** 14 May 2019
 
