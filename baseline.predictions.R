@@ -43,11 +43,11 @@ OneSeed <- function(order.csv){
   }
   baseline.df <- mmit::compute_optimal_costs(
     set.list$train$outputs, 0, "square")
-  s <- c(
+  s <- sort(unique(c(
     seq(2, 20, by=2),
     seq(25, 100, by=5),
     seq(200, 1000, by=100),
-    nrow(order.dt))
+    nrow(order.dt))))
   train.size.vec <- s[s <= nrow(order.dt)]
   result.list <- list()
   pred.mat.list <- list()
