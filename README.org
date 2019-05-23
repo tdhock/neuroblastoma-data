@@ -112,6 +112,9 @@ sets into this format, e.g.
 
 ** 23 May 2019
 Baseline predictions files created via [[file:baseline.predictions.R]]
+
+[[file:detailed.R]] creates evaluations/inputs/outputs for detailed data set.
+
 ** 14 May 2019
 
 [[file:figure-random-gp-lin.R]] makes the following figures (lines for
