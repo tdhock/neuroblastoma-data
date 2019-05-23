@@ -110,6 +110,8 @@ sets into this format, e.g.
 - [[file:data/ATAC_JV_adipose/evaluation.csv.xz]]
 - [[file:data/ATAC_JV_adipose/cv/equal_labels/folds.csv]]
 
+** 23 May 2019
+Baseline predictions files created via [[file:baseline.predictions.R]]
 ** 14 May 2019
 
 [[file:figure-random-gp-lin.R]] makes the following figures (lines for
