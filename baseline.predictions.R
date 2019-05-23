@@ -1,15 +1,9 @@
-source("packages.R")
-
 order.csv.vec <- Sys.glob(file.path(
   "data", "*", "cv", "*", "testFolds",
   "*", "*", "*", "order.csv"))
-order.i.vec <- seq_along(order.csv.vec)
 
-## profileSize testFold=1:3 is test set size from 36 to 96, indices 61 to 75.
-future::plan("multiprocess")
-
-future.apply::future_lapply(order.i.vec, function(order.i){
-  order.csv <- order.csv.vec[[order.i]]
+OneSeed <- function(order.csv){
+  library(data.table)
   seed.dir <- dirname(order.csv)
   seed <- as.integer(basename(seed.dir))
   split.dir <- dirname(dirname(seed.dir))
@@ -26,6 +20,8 @@ future.apply::future_lapply(order.i.vec, function(order.i){
   }
   rep.val.vec <- c(
     log.log.bases="log2.n",
+    n.loglog="log2.n",
+    "diff abs.identity.quantile.50%"="log.hall",
     log.sd="log.hall")
   for(old.name in names(rep.val.vec)){
     new.name <- rep.val.vec[[old.name]]
@@ -59,13 +55,16 @@ future.apply::future_lapply(order.i.vec, function(order.i){
   ##size.i.vec <- length(train.size.vec)
   for(size.i in size.i.vec){
     train.size <- train.size.vec[[size.i]]
-    train.names <- sort(rownames(set.list$train$inputs)[1:train.size])
-    cat(sprintf(
-      "%4d / %4d files %4d / %4d trainSize=%d\n",
-      order.i, length(order.csv.vec), size.i, length(train.size.vec), train.size))
-    X.train <- set.list$train$inputs[train.names,]
-    y.train <- set.list$train$outputs[train.names,]
+    maybe.both.inf <- set.list$train$outputs[1:train.size, ]
+    not.both.inf <- apply(is.finite(maybe.both.inf), 1, any)
+    train.names <- sort(names(not.both.inf)[not.both.inf])
+    y.train <- set.list$train$outputs[train.names, , drop=FALSE]
+    X.train <- set.list$train$inputs[train.names, , drop=FALSE]
     (finite.limits <- colSums(is.finite(y.train)))
+    limit.type <- ifelse(
+      is.finite(y.train[,1]), ifelse(
+        is.finite(y.train[,2]), "both", "lower"), "upper")
+    limit.tab <- table(limit.type)
     one.pred <- function(x)rep(x, nrow(set.list$test$inputs))
     na.pred <- one.pred(NA)
     X.logn <- X.train[, "log2.n", drop=FALSE]
@@ -87,18 +86,19 @@ future.apply::future_lapply(order.i.vec, function(order.i){
       }else{
         na.pred
       },
-      L1reg_linear_all=if(any(finite.limits < 2) || nrow(y.train) < 4){
+      L1reg_linear_all=if(
+        any(finite.limits < 2) || any(limit.tab < 2) || nrow(y.train) < 4){
         na.pred
       }else{
-        n.folds <- min(finite.limits, 5)
-        min.col <- which.min(finite.limits)
-        is.finite.min <- is.finite(y.train[, min.col])
+        n.folds <- min(limit.tab, 5)
         fold.vec <- rep(NA, l=nrow(y.train))
         set.seed(1)
-        fold.vec[is.finite.min] <- sample(rep(1:n.folds, l=sum(is.finite.min)))
-        fold.vec[!is.finite.min] <- sample(rep(1:n.folds, l=sum(!is.finite.min)))
+        for(l in names(limit.tab)){
+          is.l <- limit.type == l
+          fold.vec[is.l] <- sample(rep(1:n.folds, l=sum(is.l)))
+        }
         fit <- penaltyLearning::IntervalRegressionCV(
-          X.train, y.train, min.observations=train.size,
+          X.train, y.train, min.observations=nrow(y.train),
           verbose=0,
           fold.vec=fold.vec)
         as.numeric(fit$predict(set.list$test$inputs))
@@ -114,15 +114,11 @@ future.apply::future_lapply(order.i.vec, function(order.i){
       }
       stopifnot(length(pred.vec)==nrow(set.list$test$outputs))
       pred.mat.list[[model]][, paste(train.size)] <- pred.vec
-      res.vec <- if(is.na(pred.vec[1])){
-        NA
-      }else{
-        penaltyLearning::targetIntervalResidual(
-          set.list$test$outputs, pred.vec)
-      }
       result.list[[paste(size.i, model)]] <- print(data.table(
         train.size, model,
-        accuracy.percent=mean(res.vec==0)*100))
+        accuracy.percent=with(set.list$test, {
+          mean(outputs[,1] < pred.vec & pred.vec < outputs[,2])*100
+        })))
     }#for(model
   }#for(size.i
   for(model in names(pred.mat.list)){
@@ -134,5 +130,24 @@ future.apply::future_lapply(order.i.vec, function(order.i){
   }
   (result <- do.call(rbind, result.list))
   ## fwrite(result, baseline.csv)
-})
+}
 
+unlink("registry", recursive=TRUE)
+reg <- batchtools::makeRegistry("registry")
+batchtools::batchMap(
+  OneSeed, order.csv.vec, reg=reg)
+job.table <- batchtools::getJobTable(reg=reg)
+chunks <- data.frame(job.table, chunk=1)
+batchtools::submitJobs(chunks, resources=list(
+  walltime = 24*60,#minutes
+  memory = 2000,#megabytes per cpu
+  ncpus=1,
+  ntasks=1,
+  chunks.as.arrayjobs=TRUE), reg=reg)
+while(1){
+  print(batchtools::getStatus())
+  print(batchtools::getErrorMessages())
+  Sys.sleep(2)
+}
+
+jt <- batchtools::getJobTable()

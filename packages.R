@@ -12,7 +12,7 @@
 works_with_R <- function(Rvers,...){
   local.lib <- file.path(getwd(), "library")
   dir.create(local.lib, showWarnings=FALSE, recursive=TRUE)
-  .libPaths(local.lib)
+  .libPaths(c(local.lib, .libPaths()))
   pkg_ok_have <- function(pkg,ok,have){
     stopifnot(is.character(ok))
     if(!as.character(have) %in% ok){
@@ -62,9 +62,9 @@ works_with_R(
   ggplot2="3.1.1",
   data.table="1.12.2",
   directlabels="2018.5.22",
-  ##doParallel="1.0.14",
+  partykit="1.2.4", doParallel="1.0.14", # for mmit.
   future="1.13.0",
-  penaltyLearning="2019.4.18")
+  "tdhock/penaltyLearning@718a5ff84ebe99a6ffd724f4481e90f60141f3f9")
 library(survival)
 if(!requireNamespace("bams")){
   if(!file.exists("bams_1.6.tar.gz")){
