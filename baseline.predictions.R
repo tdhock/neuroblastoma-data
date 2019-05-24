@@ -1,6 +1,11 @@
 order.csv.vec <- Sys.glob(file.path(
   "data", "*", "cv", "*", "testFolds",
   "*", "*", "*", "order.csv"))
+n.pred.vec <- sapply(order.csv.vec, function(order.csv){
+  path <- file.path(dirname(order.csv), "models", "*", "predictions.csv")
+  length(Sys.glob(path))
+})
+table(n.pred.vec)
 
 OneSeed <- function(order.csv){
   library(data.table)
@@ -73,7 +78,7 @@ OneSeed <- function(order.csv){
       unsup_BIC_1=as.numeric(set.list$test$inputs[, "log2.n"]),
       unreg_linear_1=if(all(0 < finite.limits) && 1 < length(table(X.logn))){
         fit <- penaltyLearning::IntervalRegressionUnregularized(
-          X.logn, y.train)
+          X.logn, y.train, verbose=0)
         as.numeric(fit$predict(set.list$test$inputs))
       }else{
         na.pred
@@ -90,7 +95,7 @@ OneSeed <- function(order.csv){
         any(finite.limits < 2) || any(limit.tab < 2) || nrow(y.train) < 4){
         na.pred
       }else{
-        n.folds <- min(limit.tab, 5)
+        n.folds <- min(limit.tab, 5, floor(nrow(y.train)/2))
         fold.vec <- rep(NA, l=nrow(y.train))
         set.seed(1)
         for(l in names(limit.tab)){
@@ -132,6 +137,9 @@ OneSeed <- function(order.csv){
   ## fwrite(result, baseline.csv)
 }
 
+pred.not.done <- order.csv.vec[n.pred.vec==0]
+results <- lapply(pred.not.done, OneSeed)
+
 unlink("registry", recursive=TRUE)
 reg <- batchtools::makeRegistry("registry")
 batchtools::batchMap(
@@ -151,3 +159,18 @@ while(1){
 }
 
 jt <- batchtools::getJobTable()
+
+
+gppred.csv.vec <- Sys.glob(file.path(
+  "data", "*", "cv", "*", "testFolds",
+  "*", "*", "*", "gppredictions.csv"))
+seed.dir.vec <- dirname(gppred.csv.vec)
+pred.csv.vec <- file.path(seed.dir.vec, "models", "GP", "predictions.csv")
+model.dir.vec <- dirname(pred.csv.vec)
+for(model.dir.i in seq_along(model.dir.vec)){
+  model.dir <- model.dir.vec[[model.dir.i]]
+  unlink(model.dir, recursive=TRUE, force=TRUE)
+  dir.create(model.dir, showWarnings=FALSE, recursive=TRUE)
+  ##system(paste("rm -f", pred.csv.vec[[model.dir.i]]))
+  system(paste("git mv", gppred.csv.vec[[model.dir.i]], pred.csv.vec[[model.dir.i]]))
+}

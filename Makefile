@@ -1,3 +1,5 @@
+figure-max-auc/index.html: figure-max-auc.R
+	R --vanilla < $<
 figure-random-gp-lin.png: figure-random-gp-lin.R
 	R --vanilla < $<
 figure-random-linear-selection.png: figure-random-linear-selection.R

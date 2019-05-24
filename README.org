@@ -29,7 +29,7 @@ them, and the following columns:
     the profile/sequence data.
   - possible.fn/possible.fp: 1 if fn/fp possible in this label, 0
     otherwise.
-- errors: a description of the number of incorrect labels, as a
+- errors/evaluation: a description of the number of incorrect labels, as a
   function of log(penalty) values, can be used to evaluate prediction
   accuracy in terms of number of incorrectly predicted labels, or area
   under the ROC curve.
@@ -76,9 +76,6 @@ Data files were derived from
 
 [[file:data/detailed/]]
 
-So far there are only the labels and profiles files for this data
-set. TODO compute other files.
-
 This data set is called "detailed" because some sequences have more
 than one label:
 #+BEGIN_SRC R
@@ -102,16 +99,36 @@ than one label:
 > 
 #+END_SRC
 
+** ChIP-seq data sets
 
- [[file:feature-learning-benchmark.R]] copies other data
+[[file:feature-learning-benchmark.R]] copies some other data
 sets into this format, e.g.
 - [[file:data/ATAC_JV_adipose/inputs.csv.xz]]
 - [[file:data/ATAC_JV_adipose/outputs.csv.xz]]
 - [[file:data/ATAC_JV_adipose/evaluation.csv.xz]]
 - [[file:data/ATAC_JV_adipose/cv/equal_labels/folds.csv]]
 
+Wheras the neuroblastoma data sets (data/detailed and data/systematic)
+are changepoint detection problems for DNA copy number profiles, these
+other data sets are ChIP-seq peak detection problems.
+
+** 24 May 2019
+
+[[file:figure-max-auc.R]] creates an interactive data viz that shows the
+AUC maximization/alignment problem, 
+
+[[file:accuracy.R]] computes accuracy.csv files e.g.
+[[file:data/H3K27ac_TDH_some/cv/equal_labels/testFolds/1/randomTrainOrderings/3/models/unreg_linear_2/accuracy.csv]]
+
+[[file:evaluation.R]] creates [[file:data/systematic/evaluation.csv.xz]] from
+[[file:data/systematic/errors.csv.xz]]
+
 ** 23 May 2019
-Baseline predictions files created via [[file:baseline.predictions.R]]
+Baseline predictions files created via [[file:baseline.predictions.R]]:
+
+e.g. [[file:data/systematic/cv/sequenceID/testFolds/4/sampleSelectionGP_SE/5/models/unreg_linear_2/predictions.csv]]
+is a CSV data table with one row per test sequenceID and one column
+for each train set size.
 
 [[file:detailed.R]] creates evaluations/inputs/outputs for detailed data set.
 
