@@ -152,19 +152,79 @@ ggplot()+
   geom_step(aes(
     chromStart/1e3, coverage),
     data=profiles.dt,
-    color="grey50")
+    color="grey50")+
+  scale_x_continuous(breaks=seq(4e4, 5e4, by=5))
 
+win <- function(windowStart, windowEnd){
+  data.table(windowStart, windowEnd)
+}
+win.dt <- rbind(
+  win(43447, 43457),
+  win(43502, 43512))*1000
+win.dt[, window := 1:.N]
+setkey(profiles.dt, chromStart, chromEnd)
+setkey(some.labels, labelStart, labelEnd)
+setkey(win.dt, windowStart, windowEnd)
+win.profiles <- foverlaps(profiles.dt, win.dt, nomatch=0L)
+win.labels <- foverlaps(some.labels, win.dt, nomatch=0L)
+gg <- ggplot()+
+  ggtitle(
+    "Noisy coverage data and labels")+
+  theme_bw()+
+  theme(panel.margin=grid::unit(0, "lines"))+
+  facet_grid(sequenceID ~ window, scales="free", labeller=label_both)+
+  geom_tallrect(aes(
+    xmin=labelStart/1e3, xmax=labelEnd/1e3, fill=annotation),
+    data=win.labels,
+    color="grey")+
+  scale_fill_manual(values=ann.colors)+
+  geom_step(aes(
+    chromStart/1e3, coverage),
+    data=win.profiles,
+    color="grey50")+
+  scale_x_continuous(breaks=seq(4e4, 5e4, by=5))
+print(gg)
+
+win.err.list <- list()
+win.segs.list <- list()
 for(seq.i in 1:nrow(some.seqs)){
   s <- some.seqs[seq.i]
   pdir <- paste0(
     "../feature-learning-benchmark/data/",
     sub(":", "-", s$sequenceID))
   L <- PeakSegPipeline::problem.target(pdir, 1)
+  plabels <- win.labels[sequenceID==s$sequenceID]
+  plabels[, chromStart := labelStart]
+  plabels[, chromEnd := labelEnd]
+  selection.dt <- data.table(penaltyLearning::modelSelection(
+    L$models, "total.loss", "segments"))
+  for(model.i in 1:nrow(selection.dt)){
+    model <- selection.dt[model.i]
+    pen.str <- paste(model$penalty)
+    pen.info <- PeakSegDisk::problem.PeakSegFPOP(pdir, pen.str)
+    seg.dt <- data.table(sequenceID=s$sequenceID, model, pen.str, pen.info$segments)
+    setkey(seg.dt, chromStart, chromEnd)
+    over.dt <- foverlaps(seg.dt, win.dt, nomatch=0L)
+    peak.dt <- over.dt[status=="peak"]
+    e <- PeakError::PeakErrorChrom(peak.dt, plabels)
+    win.err.list[[paste(seq.i, model.i)]] <-
+      data.table(
+        sequenceID=s$sequenceID,
+        window=plabels$window,
+        model, pen.str, e)
+    win.segs.list[[paste(seq.i, model.i)]] <- over.dt
+  }
 }
+win.segs <- do.call(rbind, win.segs.list)
+win.err <- do.call(rbind, win.err.list)
+win.segs[, segStart := ifelse(chromStart<windowStart, windowStart, chromStart)]
+win.segs[, segEnd := ifelse(windowEnd<chromEnd, windowEnd, chromEnd)]
 
 auc.dt.list <- list()
 roc.dt.list <- list()
 err.dt.list <- list()
+roc.segs.list <- list()
+roc.win.err.list <- list()
 off.by <- 0.1
 for(offset in seq(-5, 5, by=off.by)){
   pred.dt <- data.table(some.seqs, pred.log.lambda=c(0, offset))
@@ -175,15 +235,36 @@ for(offset in seq(-5, 5, by=off.by)){
   err.dt.list[[paste(offset)]] <- data.table(offset, pred.eval)
   print(offset)
   roc <- penaltyLearning::ROChange(eval.dt, pred.dt, "sequenceID")
+  roc$roc[, thresh := (min.thresh+max.thresh)/2]
+  pred.some.cols <- pred.dt[, list(id=1, sequenceID, pred.log.lambda)]
+  roc.off.id <- data.table(offset, id=1, roc$roc)
+  roc.off <- roc.off.id[pred.some.cols, on=list(
+    id), allow.cartesian=TRUE]
+  roc.off[, log.lambda := thresh + pred.log.lambda]
+  roc.segs.list[[paste(offset)]] <-
+    win.segs[roc.off, nomatch=0L, on=list(
+      sequenceID,
+      min.log.lambda<log.lambda,
+      max.log.lambda>log.lambda)]
+  roc.win.err.list[[paste(offset)]] <-
+    win.err[roc.off, nomatch=0L, on=list(
+      sequenceID,
+      min.log.lambda<log.lambda,
+      max.log.lambda>log.lambda)]
+  off.min <- roc$roc[errors==min(errors)]
   auc.dt.list[[paste(offset)]] <- with(roc, data.table(
     auc, offset,
+    min.errors=off.min$errors[1],
+    n.min=nrow(off.min),
     thresholds[threshold=="min.error"]))
   roc.dt.list[[paste(offset)]] <- data.table(
     offset, roc$roc, piece=1:nrow(roc$roc), sequenceID="Total")
 }
 auc.dt <- do.call(rbind, auc.dt.list)
 roc.dt <- do.call(rbind, roc.dt.list)
+roc.segs <- do.call(rbind, roc.segs.list)
 err.dt <- do.call(rbind, err.dt.list)
+roc.win.err.dt <- do.call(rbind, roc.win.err.list)
 
 ggplot()+
   geom_point(aes(
@@ -198,20 +279,70 @@ err.dt.tall <- melt(
   both.dt,
   variable.name="error.type",
   measure.vars=c("fp", "fn", "errors"))
-err.dt.tall[, showSeq := gsub(
+id2show <- function(seqID)gsub(
   "ATAC_JV_adipose/samples/AC1/|/problems/chrX:37148256-49242997", "",
-  sequenceID)]
-roc.dt[, thresh := (min.thresh+max.thresh)/2]
+  seqID)
+roc.segs[, showSeq := id2show(sequenceID)]
+win.labels[, showSeq := id2show(sequenceID)]
+roc.win.err.dt[, showSeq := id2show(sequenceID)]
+win.profiles[, showSeq := id2show(sequenceID)]
+err.dt.tall[, showSeq := id2show(sequenceID)]
 auc.dt[, thresh := (min.thresh+max.thresh)/2]
 roc.dt[, Errors := ifelse(errors==min(errors), "Min", "More"), by=list(offset)]
 min.err <- roc.dt[Errors=="Min"]
 min.err[, piece := 1:.N, by=list(offset)]
 roc.size <- 5
+roc.peaks <- roc.segs[status=="peak"]
 viz <- animint(
   title="Changepoint detection ROC curve alignment problem",
   ##first=list(offset=0.5),
   duration=list(offset=250),
   time=list(variable="offset", ms=250),
+  profiles=ggplot()+
+    ggtitle(
+      "Noisy coverage data, labels, and predicted model")+
+    theme_bw()+
+    theme(panel.margin=grid::unit(0, "lines"))+
+    theme_animint(width=1200)+
+    facet_grid(showSeq ~ window, scales="free", labeller=label_both)+
+    geom_tallrect(aes(
+      xmin=labelStart/1e3, xmax=labelEnd/1e3, fill=annotation),
+      data=win.labels,
+      alpha=0.5,
+      color="grey")+
+    scale_linetype_manual(
+      "Error type",
+      values=c(
+        correct=0,
+        "false negative"=3,
+        "false positive"=1))+
+    geom_tallrect(aes(
+      xmin=chromStart/1e3, xmax=chromEnd/1e3, linetype=status),
+      data=roc.win.err.dt,
+      showSelected=c("offset", "thresh"),
+      fill=NA,
+      size=2,
+      color="black")+
+    scale_fill_manual(values=ann.colors)+
+    geom_step(aes(
+      chromStart/1e3, coverage),
+      data=win.profiles,
+      color="grey50")+
+    geom_segment(aes(
+      segStart/1e3, mean,
+      xend=segEnd/1e3, yend=mean),
+      color="green",
+      showSelected=c("offset", "thresh"),
+      data=roc.segs)+
+    geom_segment(aes(
+      segStart/1e3, 0,
+      xend=segEnd/1e3, yend=0),
+      color="deepskyblue",
+      showSelected=c("offset", "thresh"),
+      size=5,
+      alpha=0.5,
+      data=roc.peaks)+
+    scale_x_continuous(breaks=seq(4e4, 5e4, by=5)),
   auc=ggplot()+
     ggtitle(
       "AUC, select offset")+
@@ -256,6 +387,7 @@ viz <- animint(
       hjust=0,
       color="grey",
       data=data.table(auc.dt, showSeq="Total"))+
+    ## TODO geom_point, select min err and n.min.
     geom_segment(aes(
       min.thresh, value,
       key=paste(piece, error.type),
