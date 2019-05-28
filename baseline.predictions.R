@@ -143,7 +143,7 @@ results <- lapply(pred.not.done, OneSeed)
 unlink("registry", recursive=TRUE)
 reg <- batchtools::makeRegistry("registry")
 batchtools::batchMap(
-  OneSeed, order.csv.vec, reg=reg)
+  OneSeed, pred.not.done, reg=reg)
 job.table <- batchtools::getJobTable(reg=reg)
 chunks <- data.frame(job.table, chunk=1)
 batchtools::submitJobs(chunks, resources=list(
