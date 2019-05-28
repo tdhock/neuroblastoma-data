@@ -10,12 +10,12 @@ for(folds.csv in folds.csv.vec){
     fold.dt[, set := ifelse(
       fold==test.fold, "test", "train")]
     for(seed in 1:n.seeds){
+      seed.dir <- file.path(
+        cv.type.dir, "testFolds",
+        test.fold, "randomTrainOrderings", seed)
       order.csv <- file.path(seed.dir, "order.csv")
       if(!file.exists(order.csv)){
         set.seed(seed)
-        seed.dir <- file.path(
-          cv.type.dir, "testFolds",
-          test.fold, "randomTrainOrderings", seed)
         order.dt <- fold.dt[fold!=test.fold, .(
           sequenceID
         )][sample(.N)]

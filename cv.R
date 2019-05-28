@@ -7,9 +7,15 @@ labels.xz.vec <- Sys.glob("data/*/labels.csv.xz")
 N.folds <- 6
 for(set.i in seq_along(labels.xz.vec)){
   labels.xz <- labels.xz.vec[[set.i]]
-  labels.dt <- fread(cmd=paste("xzcat", labels.xz))
+  labels.cmd <- paste("xzcat", labels.xz)
+  labels.dt <- fread(cmd=labels.cmd)
+  prob.dt <- labels.dt[, list(
+    labels=.N
+  ), by=list(sequenceID)]
+  eval.cmd <- sub("labels", "evaluation", labels.cmd)
+  eval.dt <- fread(cmd=eval.cmd)
   head(match.dt <- namedCapture::df_match_variable(
-    labels.dt,
+    prob.dt,
     sequenceID=list(
       profileID="[0-9]+",
       "_",
@@ -42,10 +48,10 @@ for(set.i in seq_along(labels.xz.vec)){
     set.seed(1)
     fold.vec <- fun(match.dt)
     print(table(fold.vec))
-    cv.dir <- file.path(dirname(labels.xz), "cv", split.name)
-    label.folds <- labels.dt[, data.table(
+    cv.dir <- file.path(dirname(labels.xz), "cv", paste0("R-3.6.0-", split.name))
+    prob.folds <- prob.dt[, data.table(
       sequenceID, fold=fold.vec)]
-    fold.counts <- label.folds[, list(
+    fold.counts <- prob.folds[, list(
       folds=length(unique(fold))
     ), by=list(sequenceID)]
     bad <- fold.counts[folds != 1]
@@ -53,7 +59,13 @@ for(set.i in seq_along(labels.xz.vec)){
       print(bad)
       stop("some sequenceID numbers appear in more than one fold")
     }
-    u.folds <- unique(label.folds)[order(sequenceID)]
+    print(auc.dt <- prob.folds[, {
+      pred.dt <- data.table(sequenceID, pred.log.lambda=0)
+      L <- penaltyLearning::ROChange(eval.dt, pred.dt, "sequenceID")
+      p <- L$thresholds[threshold=="predicted"]
+      list(auc=L$auc, possible.fn=p$possible.fn, possible.fp=p$possible.fp)
+    }, by=list(fold)])
+    u.folds <- unique(prob.folds)[order(sequenceID)]
     dir.create(cv.dir, showWarnings=FALSE, recursive=TRUE)
     print(folds.csv <- file.path(cv.dir, "folds.csv"))
     fwrite(u.folds, folds.csv)
