@@ -64,7 +64,7 @@ works_with_R(
   directlabels="2018.5.22",
   partykit="1.2.4", doParallel="1.0.14", # for mmit.
   future="1.13.0",
-  "tdhock/penaltyLearning@915cf35061caf7da9305fd718fe782e61708ed04")
+  "tdhock/penaltyLearning@fc2833c47d18f20e99648714be47829cf41cc084")
 library(survival)
 if(!requireNamespace("bams")){
   if(!file.exists("bams_1.6.tar.gz")){

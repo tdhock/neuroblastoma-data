@@ -45,6 +45,7 @@ for(pred.csv.i in seq_along(pred.csv.vec)){
         data.table(percent.correct.labels=NA_real_, auc=NA_real_)
       }else{
         roc <- penaltyLearning::ROChange(L$evaluation, .SD, "sequenceID")
+        ##browser(expr=train.size==4)
         with(roc, thresholds[threshold=="predicted", data.table(
           percent.correct.labels=100-error.percent, auc)])
       }
