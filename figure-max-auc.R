@@ -187,6 +187,7 @@ print(gg)
 
 win.err.list <- list()
 win.segs.list <- list()
+win.selection.list <- list()
 for(seq.i in 1:nrow(some.seqs)){
   s <- some.seqs[seq.i]
   pdir <- paste0(
@@ -197,7 +198,10 @@ for(seq.i in 1:nrow(some.seqs)){
   plabels[, chromStart := labelStart]
   plabels[, chromEnd := labelEnd]
   selection.dt <- data.table(penaltyLearning::modelSelection(
-    L$models, "total.loss", "segments"))
+    L$models, "total.loss", "peaks"))
+  win.selection.list[[paste(seq.i)]] <- data.table(
+    sequenceID=s$sequenceID,
+    selection.dt)
   for(model.i in 1:nrow(selection.dt)){
     model <- selection.dt[model.i]
     pen.str <- paste(model$penalty)
@@ -215,19 +219,36 @@ for(seq.i in 1:nrow(some.seqs)){
     win.segs.list[[paste(seq.i, model.i)]] <- over.dt
   }
 }
+win.selection <- do.call(rbind, win.selection.list)
 win.segs <- do.call(rbind, win.segs.list)
 win.err <- do.call(rbind, win.err.list)
 win.segs[, segStart := ifelse(chromStart<windowStart, windowStart, chromStart)]
 win.segs[, segEnd := ifelse(windowEnd<chromEnd, windowEnd, chromEnd)]
+
+both.err <- rbind(
+  show.err[, .(type="saved", sequenceID, min.log.lambda, max.log.lambda, errors)],
+  win.selection[, .(type="computed", sequenceID, min.log.lambda, max.log.lambda, errors)])
+ggplot()+
+  theme_bw()+
+  theme(panel.margin=grid::unit(0, "lines"))+
+  facet_grid(sequenceID ~ ., scales="free", labeller=label_both)+
+  geom_segment(aes(
+    min.log.lambda, errors,
+    xend=max.log.lambda, yend=errors,
+    color=type, size=type),
+    data=both.err)+
+  scale_size_manual(values=c(
+    computed=1,
+    saved=2))
 
 auc.dt.list <- list()
 roc.dt.list <- list()
 err.dt.list <- list()
 roc.segs.list <- list()
 roc.win.err.list <- list()
-off.by <- 0.1
+off.by <- 0.2
 for(offset in seq(-5, 5, by=off.by)){
-  pred.dt <- data.table(some.seqs, pred.log.lambda=c(0, offset))
+  pred.dt <- data.table(some.seqs, pred.log.lambda=10+c(0, offset))
   pred.eval <- eval.dt[pred.dt, on=list(sequenceID)]
   pred.eval[, min.thresh := min.log.lambda-pred.log.lambda]
   pred.eval[, max.thresh := max.log.lambda-pred.log.lambda]
@@ -242,15 +263,15 @@ for(offset in seq(-5, 5, by=off.by)){
     id), allow.cartesian=TRUE]
   roc.off[, log.lambda := thresh + pred.log.lambda]
   roc.segs.list[[paste(offset)]] <-
-    win.segs[roc.off, nomatch=0L, on=list(
+    win.segs[roc.off, nomatch=0L, allow.cartesian=TRUE, on=list(
       sequenceID,
-      min.log.lambda<log.lambda,
-      max.log.lambda>log.lambda)]
+      min.log.lambda<=log.lambda,
+      max.log.lambda>=log.lambda)]
   roc.win.err.list[[paste(offset)]] <-
     win.err[roc.off, nomatch=0L, on=list(
       sequenceID,
-      min.log.lambda<log.lambda,
-      max.log.lambda>log.lambda)]
+      min.log.lambda<=log.lambda,
+      max.log.lambda>=log.lambda)]
   off.min <- roc$roc[errors==min(errors)]
   auc.dt.list[[paste(offset)]] <- with(roc, data.table(
     auc, offset,
@@ -282,29 +303,83 @@ err.dt.tall <- melt(
 id2show <- function(seqID)gsub(
   "ATAC_JV_adipose/samples/AC1/|/problems/chrX:37148256-49242997", "",
   seqID)
-roc.segs[, showSeq := id2show(sequenceID)]
-win.labels[, showSeq := id2show(sequenceID)]
-roc.win.err.dt[, showSeq := id2show(sequenceID)]
-win.profiles[, showSeq := id2show(sequenceID)]
-err.dt.tall[, showSeq := id2show(sequenceID)]
+roc.segs[, sample := id2show(sequenceID)]
+win.labels[, sample := id2show(sequenceID)]
+roc.win.err.dt[, sample := id2show(sequenceID)]
+win.profiles[, sample := id2show(sequenceID)]
+err.dt.tall[, sample := id2show(sequenceID)]
 auc.dt[, thresh := (min.thresh+max.thresh)/2]
 roc.dt[, Errors := ifelse(errors==min(errors), "Min", "More"), by=list(offset)]
+auc.dt[, max.correct := as.numeric(labels-min.errors)]
+auc.dt[, optimal.models := as.numeric(n.min)]
+auc.tall <- melt(
+  auc.dt,
+  measure.vars=c("auc", "max.correct", "optimal.models"))
 min.err <- roc.dt[Errors=="Min"]
 min.err[, piece := 1:.N, by=list(offset)]
 roc.size <- 5
 roc.peaks <- roc.segs[status=="peak"]
+text.y <- c(
+  "offset"=200,
+  "thresh"=175,
+  "fp"=150,
+  "fn"=125)
+text.dt <- melt(
+  roc.dt,
+  id.vars=c("offset", "thresh"),
+  measure.vars=names(text.y))
+text.dt[, y := text.y[variable] ]
+text.dt[, digits := ifelse(variable %in% c("fp", "fn"), 0, 1)]
+text.dt[, value.num := round(value, digits)]
+text.dt[, value.str := paste(value.num)]
+err.dt.tall[, value.i := cumsum(
+  c(FALSE, diff(value) != 0)
+), by=list(sample, offset, error.type)]
+err.dt.segs <- err.dt.tall[, list(
+  min.thresh=min(min.thresh),
+  max.thresh=max(max.thresh),
+  value=value[1]
+), by=list(sample, offset, error.type, value.i)]
+min.tallrects <- data.table(
+  err.dt.segs[error.type=="errors", {
+    .SD[value==min(value)]
+  }, by=list(sample, offset)],
+  Errors="Min")
+chunk_vars <- "offset"
 viz <- animint(
   title="Changepoint detection ROC curve alignment problem",
   ##first=list(offset=0.5),
   duration=list(offset=250),
   time=list(variable="offset", ms=250),
   profiles=ggplot()+
+    ylab("Number of aligned DNA sequence reads (coverage)")+
     ggtitle(
       "Noisy coverage data, labels, and predicted model")+
     theme_bw()+
     theme(panel.margin=grid::unit(0, "lines"))+
-    theme_animint(width=1200)+
-    facet_grid(showSeq ~ window, scales="free", labeller=label_both)+
+    theme_animint(width=1300)+
+    facet_grid(sample ~ window, scales="free", labeller=label_both)+
+    ## geom_text(aes(
+    ##   43447, 200, label=sprintf(
+    ##     "offset=%.1f thresh=%.1f fp=%d fn=%d",
+    ##     offset, thresh, fp, fn)),
+    ##   hjust=0,
+    ##   showSelected=c("offset", "thresh"),
+    ##   data=data.table(
+    ##     roc.dt,
+    ##     window=1,
+    ##     sample="MSC83"))+
+    geom_text(aes(
+      43447, y,
+      key=paste(offset, thresh, variable),
+      label=paste0(
+        variable, "=", value.str)),
+      hjust=0,
+      showSelected=c("offset", "thresh"),
+      data=data.table(
+        text.dt,
+        window=1,
+        sample="MSC83"))+
     geom_tallrect(aes(
       xmin=labelStart/1e3, xmax=labelEnd/1e3, fill=annotation),
       data=win.labels,
@@ -317,8 +392,11 @@ viz <- animint(
         "false negative"=3,
         "false positive"=1))+
     geom_tallrect(aes(
-      xmin=chromStart/1e3, xmax=chromEnd/1e3, linetype=status),
+      xmin=chromStart/1e3, xmax=chromEnd/1e3,
+      key=paste(chromStart, chromEnd),
+      linetype=status),
       data=roc.win.err.dt,
+      chunk_vars=chunk_vars,
       showSelected=c("offset", "thresh"),
       fill=NA,
       size=2,
@@ -330,39 +408,74 @@ viz <- animint(
       color="grey50")+
     geom_segment(aes(
       segStart/1e3, mean,
+      key=paste(segStart, segEnd),
       xend=segEnd/1e3, yend=mean),
       color="green",
+      alpha=0.7,
+      chunk_vars=chunk_vars,
       showSelected=c("offset", "thresh"),
       data=roc.segs)+
     geom_segment(aes(
       segStart/1e3, 0,
+      key=paste(segStart, segEnd),
       xend=segEnd/1e3, yend=0),
       color="deepskyblue",
       showSelected=c("offset", "thresh"),
-      size=5,
-      alpha=0.5,
+      chunk_vars=chunk_vars,
+      size=3,
+      alpha=0.7,
       data=roc.peaks)+
-    scale_x_continuous(breaks=seq(4e4, 5e4, by=5)),
-  auc=ggplot()+
+    geom_point(aes(
+      segStart/1e3, 0,
+      key=paste(segStart, segEnd)),
+      color="deepskyblue",
+      showSelected=c("offset", "thresh"),
+      chunk_vars=chunk_vars,
+      size=4,
+      fill="white",
+      alpha=0.7,
+      data=roc.peaks)+
+    scale_x_continuous(
+      "Position on chrX (kb = kilo bases, reference genome hg19)",
+      breaks=seq(4e4, 5e4, by=5)),
+  metrics=ggplot()+
     ggtitle(
       "AUC, select offset")+
     theme_bw()+
     theme(panel.margin=grid::unit(0, "lines"))+
+    facet_grid(variable ~ ., scales="free")+
+    geom_blank(aes(
+      x, y),
+      data=data.table(
+        x=0, y=c(10.4, 8.6),
+        variable="max.correct"))+
+    xlab("Offset = Difference between predicted values of samples")+
     geom_point(aes(
-      offset, auc),
+      offset, value),
       fill=NA,
-      data=auc.dt)+
-    geom_tallrect(aes(
-      xmin=offset-off.by/2, xmax=offset+off.by/2),
-      clickSelects="offset",
-      alpha=0.5,
-      data=auc.dt),
+      data=auc.tall)+
+    ylab("")+
+    make_tallrect(auc.dt, "offset"),
+  ## auc=ggplot()+
+  ##   ggtitle(
+  ##     "AUC, select offset")+
+  ##   theme_bw()+
+  ##   theme(panel.margin=grid::unit(0, "lines"))+
+  ##   geom_point(aes(
+  ##     offset, auc),
+  ##     fill=NA,
+  ##     data=auc.dt)+
+  ##   geom_tallrect(aes(
+  ##     xmin=offset-off.by/2, xmax=offset+off.by/2),
+  ##     clickSelects="offset",
+  ##     alpha=0.5,
+  ##     data=auc.dt),
   error=ggplot()+
     ggtitle(
       "Error curves, select threshold")+
     theme_bw()+
     theme(panel.margin=grid::unit(0, "lines"))+
-    facet_grid(showSeq ~ ., scales="free")+
+    facet_grid(sample ~ ., scales="free")+
     scale_color_manual(values=c(
       fp="red",
       fn="deepskyblue",
@@ -375,25 +488,52 @@ viz <- animint(
     scale_y_continuous(
       "Number of incorrectly predicted labels",
       breaks=seq(0, 20, by=2))+
-    geom_vline(aes(
-      xintercept=thresh, key=piece),
-      showSelected="offset",
-      color="grey",
-      data=min.err)+
+    ## geom_vline(aes(
+    ##   xintercept=xintercept),
+    ##   color="grey",
+    ##   data=data.table(xintercept=0))+
+    ## geom_vline(aes(
+    ##   xintercept=thresh, key=piece),
+    ##   showSelected=c("offset", "Errors"),
+    ##   color="grey50",
+    ##   data=data.table(
+    ##     min.err,
+    ##     Errors="Min"))+
+    ## geom_text(aes(
+    ##   thresh+0.2, labels*0.9, key=1, label=paste0(
+    ##     "Min Errors=", errors)),
+    ##   showSelected=c("offset", "Errors"),
+    ##   hjust=0,
+    ##   color="grey50",
+    ##   data=data.table(
+    ##     auc.dt,
+    ##     Errors="Min",
+    ##     sample="Total"))+
+    geom_tallrect(aes(
+      xmin=min.thresh,
+      xmax=max.thresh,
+      key=min.thresh),
+      showSelected=c("offset", "Errors"),
+      color="grey50",
+      alpha=0.5,
+      data=min.tallrects)+
     geom_text(aes(
-      thresh+0.2, labels*0.9, key=1, label=paste0(
+      min.thresh, labels*0.9, key=1, label=paste0(
         "Min Errors=", errors)),
-      showSelected="offset",
+      showSelected=c("offset", "Errors"),
       hjust=0,
-      color="grey",
-      data=data.table(auc.dt, showSeq="Total"))+
-    ## TODO geom_point, select min err and n.min.
+      color="grey50",
+      data=data.table(
+        auc.dt,
+        Errors="Min",
+        sample="Total"))+
     geom_segment(aes(
       min.thresh, value,
       key=paste(piece, error.type),
       color=error.type,
       size=error.type,
       xend=max.thresh, yend=value),
+      chunk_vars=chunk_vars,
       showSelected="offset",
       data=err.dt.tall)+
     geom_tallrect(aes(
@@ -408,7 +548,7 @@ viz <- animint(
       data=roc.dt),
   roc=ggplot()+
     ggtitle(
-      "ROC curves")+
+      "ROC curves, select threshold")+
     theme_bw()+
     theme(panel.margin=grid::unit(0, "lines"))+
     geom_path(aes(
@@ -445,5 +585,6 @@ viz <- animint(
       slope=slope, intercept=intercept),
       color="grey",
       data=data.table(slope=1, intercept=0))
-  )
+)
+unlink("figure-max-auc", recursive=TRUE)
 animint2dir(viz, "figure-max-auc")
