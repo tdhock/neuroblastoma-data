@@ -346,6 +346,7 @@ min.tallrects <- data.table(
   }, by=list(sample, offset)],
   Errors="Min")
 chunk_vars <- "offset"
+chunk_vars <- character()
 viz <- animint(
   title="Changepoint detection ROC curve alignment problem",
   ##first=list(offset=0.5),

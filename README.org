@@ -114,7 +114,7 @@ other data sets are ChIP-seq peak detection problems.
 
 ** 29 May 2019
 
-[[file:figure-max-auc.R]]
+[[file:figure-max-auc.R]] creates http://members.cbio.mines-paristech.fr/~thocking/figure-max-auc/
 
 ** 24 May 2019
 
