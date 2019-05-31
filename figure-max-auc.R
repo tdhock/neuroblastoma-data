@@ -273,8 +273,13 @@ for(offset in seq(-5, 5, by=off.by)){
       min.log.lambda<=log.lambda,
       max.log.lambda>=log.lambda)]
   off.min <- roc$roc[errors==min(errors)]
+  roc$roc[, min.fp.fn := ifelse(fp<fn, fp, fn)]
+  roc$roc[, width.thresh := max.thresh-min.thresh]
+  aub <- roc$roc[!(width.thresh==Inf & min.fp.fn==0), {
+    sum(min.fp.fn*width.thresh)
+  }]
   auc.dt.list[[paste(offset)]] <- with(roc, data.table(
-    auc, offset,
+    auc, aub, offset,
     min.errors=off.min$errors[1],
     n.min=nrow(off.min),
     thresholds[threshold=="min.error"]))
@@ -314,7 +319,7 @@ auc.dt[, max.correct := as.numeric(labels-min.errors)]
 auc.dt[, optimal.models := as.numeric(n.min)]
 auc.tall <- melt(
   auc.dt,
-  measure.vars=c("auc", "max.correct", "optimal.models"))
+  measure.vars=c("aub", "auc", "max.correct", "optimal.models"))
 min.err <- roc.dt[Errors=="Min"]
 min.err[, piece := 1:.N, by=list(offset)]
 roc.size <- 5
