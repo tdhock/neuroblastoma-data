@@ -36,14 +36,47 @@ for(folds.csv.i in seq_along(folds.csv.vec)){
     cat(sprintf(
       "%d / %d data=%s, fold=%d\n",
       folds.csv.i, length(folds.csv.vec), data.name, test.fold))
-    fit <- with(set.list$train, iregnet::cv.iregnet(
-      inputs, outputs, family="gaussian"))
-    plot(fit)
-    pred.vec <- predict(fit, set.list$test$inputs)
-    roc.list <- penaltyLearning::targetIntervalROC(
-      set.list$test$outputs, pred.vec)
-    pred.err.list[[paste(data.name, test.fold)]] <- with(roc.list, data.table(
-      data.name, test.fold,
-      thresholds[threshold=="predicted"], auc))
+    fun.list <- list(
+      iregnet.scale1=function(inputs, outputs){
+        iregnet::cv.iregnet(
+          inputs, outputs,
+          family="gaussian", estimate_scale=FALSE, scale_init=1)
+      },
+      iregnet.estscale=function(inputs, outputs){
+        iregnet::cv.iregnet(
+          inputs, outputs, family="gaussian")
+      },
+      penaltyLearning.scale1=function(inputs, outputs){
+        penaltyLearning::IntervalRegressionCV(
+          inputs, outputs)
+      })
+    fit.list <- list()
+    seconds.vec <- c(constant=0)
+    for(algorithm in names(fun.list)){
+      fun <- fun.list[[algorithm]]
+      seconds.vec[[algorithm]] <- system.time({
+        fit.list[[algorithm]] <- with(set.list$train, fun(inputs, outputs))
+      })[["elapsed"]]
+    }
+    plot(fit.list$iregnet.scale1)
+    plot(fit.list$iregnet.estscale)
+    plot(fit.list$penaltyLearning.scale1)
+    pred.list <- list(
+      constant=rep(0, nrow(set.list$test$inputs)))
+    for(algorithm in names(fit.list)){
+      fit <- fit.list[[algorithm]]
+      pred.list[[algorithm]] <- predict(fit, set.list$test$inputs)
+    }
+    for(algorithm in names(pred.list)){
+      pred.vec <- as.numeric(pred.list[[algorithm]])
+      roc.list <- penaltyLearning::targetIntervalROC(
+        set.list$test$outputs, pred.vec)
+      pred.err.list[[paste(data.name, test.fold)]] <- with(roc.list, data.table(
+        data.name, test.fold,
+        seconds=seconds.vec[[algorithm]],
+        thresholds[threshold=="predicted"], auc))
+    }
+    stop(1)
   }
 }
+(pred.err <- do.call(rbind, pred.err.list))
