@@ -63,7 +63,8 @@ works_with_R(
   data.table="1.12.2",
   directlabels="2018.5.22",
   partykit="1.2.4", doParallel="1.0.14", # for mmit.
-  future="1.13.0",
+  future="1.13.0", future.apply="1.3.0",
+  "anujkhare/iregnet@4d77f047c3a00a5524e1cbe140226417e3aedd92",
   "tdhock/penaltyLearning@fc2833c47d18f20e99648714be47829cf41cc084")
 library(survival)
 if(!requireNamespace("bams")){
@@ -81,6 +82,7 @@ if(FALSE){
     "mmit")
 }else{
   if(!require(mmit)){
-    system("git clone https://github.com/aldro61/mmit.git && R CMD INSTALL mmit/Rpackage && rm -rf mmit")
+    system("git clone https://github.com/aldro61/mmit.git")
+    install.packages("~/R/mmit/Rpackage", type="source", repo=NULL)
   }
 }

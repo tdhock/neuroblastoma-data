@@ -112,6 +112,12 @@ Wheras the neuroblastoma data sets (data/detailed and data/systematic)
 are changepoint detection problems for DNA copy number profiles, these
 other data sets are ChIP-seq peak detection problems.
 
+** 19 July 2019
+
+[[file:figure-2019-07-19.R]] makes
+
+[[file:figure-2019-07-19-accuracy.png]]
+
 ** 29 May 2019
 
 [[file:figure-max-auc.R]] creates http://members.cbio.mines-paristech.fr/~thocking/figure-max-auc/

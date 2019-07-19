@@ -71,12 +71,12 @@ for(folds.csv.i in seq_along(folds.csv.vec)){
       pred.vec <- as.numeric(pred.list[[algorithm]])
       roc.list <- penaltyLearning::targetIntervalROC(
         set.list$test$outputs, pred.vec)
-      pred.err.list[[paste(data.name, test.fold)]] <- with(roc.list, data.table(
-        data.name, test.fold,
-        seconds=seconds.vec[[algorithm]],
-        thresholds[threshold=="predicted"], auc))
+      pred.err.list[[paste(data.name, test.fold, algorithm)]] <- with(
+        roc.list, data.table(
+          data.name, test.fold, algorithm,
+          seconds=seconds.vec[[algorithm]],
+          thresholds[threshold=="predicted"], auc))
     }
-    stop(1)
   }
 }
 (pred.err <- do.call(rbind, pred.err.list))
