@@ -121,6 +121,59 @@ Whereas the neuroblastoma data sets (data/detailed and data/systematic)
 are changepoint detection problems for DNA copy number profiles, these
 other data sets are ChIP-seq peak detection problems.
 
+** 7 Aug 2019
+[[file:data/detailed2012_11_30/regions.csv.gz]]
+
+#+BEGIN_SRC R
+> r[type=="breakpoints", table(annotation)]
+annotation
+>0breakpoints  0breakpoints   1breakpoint
+          224          3591          1109
+> 
+#+END_SRC
+
+http://members.cbio.mines-paristech.fr/~thocking/neuroblastoma/signal.list.annotation.sets.RData
+
+#+BEGIN_SRC R
+  (objs <- load("signal.list.annotation.sets.RData"))
+  library(data.table)
+  size.vec <- sapply(signal.list, nrow)
+  seq.labels <- do.call(rbind, lapply(names(annotation.sets), function(label.set){
+    label.df <- annotation.sets[[label.set]]
+    data.table(label.df)[, data.table(
+      label.set,
+      labels=.N
+    ), by=.(pid.chr=paste0(profile.id, ".", chromosome), annotation)]
+  }))
+  set.sizes <- seq.labels[, {
+    u.ids <- unique(pid.chr)
+    u.sizes <- size.vec[paste(u.ids)]
+    as.list(quantile(u.sizes, seq(0, 1, l=3)))
+  }, by=.(label.set)]
+  set.labels <- dcast(
+    seq.labels,
+    label.set ~ annotation,
+    value.var="labels",
+    fun.aggregate=sum)
+  set.sizes[set.labels, on=.(label.set)][order(`50%`)]
+#+END_SRC
+
+#+BEGIN_SRC R
+> set.sizes[set.labels, on=.(label.set)][order(`50%`)]
+
+                 label.set    0%   50%   100% 1breakpoint 0breakpoints
+1:       neuroblastoma.bac    25   234    657         485         3157
+2:            lymphoma.tdh   536  2075  28006          44           52
+3:     medulloblastoma.tdh   849  3865 148782        1180          568
+4: neuroblastoma.nimblegen  1948  4674   5937           7          181
+5: neuroblastoma.chiba.tdh  1589 13306  22215         125           93
+6:      lymphoma.mkatayama   533 13502  34629         182           79
+7:    neuroblastoma.dr.tdh 24484 89524 153662         537          247
+> 
+#+END_SRC
+
+http://members.cbio.mines-paristech.fr/~thocking/neuroblastoma/slides-snp6.tgz
+
 ** 22 July 2019
 
 [[file:figure-2019-07-22.R]] makes
