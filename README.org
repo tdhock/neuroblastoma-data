@@ -1,11 +1,15 @@
-Neuroblastoma data set
+Neuroblastoma data and other supervised penalty learning benchmarks
 
-This repo provides xz-compressed text/csv files of two neuroblastoma
-data sets, which are also available on the [[https://cloud.r-project.org/web/packages/neuroblastoma/][CRAN]].
+This repo provides xz-compressed text/csv files of several benchmark
+data sets involving censored regression for [[http://proceedings.mlr.press/v28/hocking13.html][supervised penalty
+learning]].
 
-There are two data sets, data/systematic and data/detailed. Each data
-set has the following files, with the sequenceID column used to link
-them, and the following columns:
+There are two neuroblastoma
+data sets (also available on the [[https://cloud.r-project.org/web/packages/neuroblastoma/][CRAN]]), and several ChIP-seq data sets
+(also available from [[https://archive.ics.uci.edu/ml/datasets/chipseq][the UCI repository]]).
+
+Each data set has the following files, with the sequenceID column used
+to link them, and the following columns:
 - profiles: raw/noisy sequence data in which to look for changepoints.
   - position: position on chromosome (x axis in plot of sequence data)
   - signal: noisy data (y axis on plot of sequence data)
@@ -47,6 +51,10 @@ them, and the following columns:
 
 ** Systematic / original labels
 
+For the neuroblastoma data there are actually two data sets,
+data/systematic and data/detailed, which correspond to two different
+labels for the same noisy data sequences.
+
 [[file:data/systematic/]]
 
 The original neuroblastoma data set has 3418 labeled
@@ -76,8 +84,9 @@ Data files were derived from
 
 [[file:data/detailed/]]
 
-This data set is called "detailed" because some sequences have more
-than one label:
+This data set is also derived from the neuroblastoma data set; it is
+called "detailed" because, unlike the systematic/original labels, some
+sequences have more than one label:
 #+BEGIN_SRC R
   data.table::fread("xzcat data/detailed/labels.csv.xz")[, .(
     labels=.N), by=sequenceID][, .(
@@ -101,16 +110,86 @@ than one label:
 
 ** ChIP-seq data sets
 
-[[file:feature-learning-benchmark.R]] copies some other data
+[[file:feature-learning-benchmark.R]] copies UCI chipseq data
 sets into this format, e.g.
 - [[file:data/ATAC_JV_adipose/inputs.csv.xz]]
 - [[file:data/ATAC_JV_adipose/outputs.csv.xz]]
 - [[file:data/ATAC_JV_adipose/evaluation.csv.xz]]
 - [[file:data/ATAC_JV_adipose/cv/equal_labels/folds.csv]]
 
-Wheras the neuroblastoma data sets (data/detailed and data/systematic)
+Whereas the neuroblastoma data sets (data/detailed and data/systematic)
 are changepoint detection problems for DNA copy number profiles, these
 other data sets are ChIP-seq peak detection problems.
+
+** 7 Aug 2019
+[[file:data/detailed2012_11_30/regions.csv.gz]]
+
+#+BEGIN_SRC R
+> r[type=="breakpoints", table(annotation)]
+annotation
+>0breakpoints  0breakpoints   1breakpoint
+          224          3591          1109
+> 
+#+END_SRC
+
+http://members.cbio.mines-paristech.fr/~thocking/neuroblastoma/signal.list.annotation.sets.RData
+
+#+BEGIN_SRC R
+  (objs <- load("signal.list.annotation.sets.RData"))
+  library(data.table)
+  size.vec <- sapply(signal.list, nrow)
+  seq.labels <- do.call(rbind, lapply(names(annotation.sets), function(label.set){
+    label.df <- annotation.sets[[label.set]]
+    data.table(label.df)[, data.table(
+      label.set,
+      labels=.N
+    ), by=.(pid.chr=paste0(profile.id, ".", chromosome), annotation)]
+  }))
+  set.sizes <- seq.labels[, {
+    u.ids <- unique(pid.chr)
+    u.sizes <- size.vec[paste(u.ids)]
+    as.list(quantile(u.sizes, seq(0, 1, l=3)))
+  }, by=.(label.set)]
+  set.labels <- dcast(
+    seq.labels,
+    label.set ~ annotation,
+    value.var="labels",
+    fun.aggregate=sum)
+  set.sizes[set.labels, on=.(label.set)][order(`50%`)]
+#+END_SRC
+
+#+BEGIN_SRC R
+> set.sizes[set.labels, on=.(label.set)][order(`50%`)]
+
+                 label.set    0%   50%   100% 1breakpoint 0breakpoints
+1:       neuroblastoma.bac    25   234    657         485         3157
+2:            lymphoma.tdh   536  2075  28006          44           52
+3:     medulloblastoma.tdh   849  3865 148782        1180          568
+4: neuroblastoma.nimblegen  1948  4674   5937           7          181
+5: neuroblastoma.chiba.tdh  1589 13306  22215         125           93
+6:      lymphoma.mkatayama   533 13502  34629         182           79
+7:    neuroblastoma.dr.tdh 24484 89524 153662         537          247
+> 
+#+END_SRC
+
+http://members.cbio.mines-paristech.fr/~thocking/neuroblastoma/slides-snp6.tgz
+
+** 22 July 2019
+
+[[file:figure-2019-07-22.R]] makes
+
+[[file:figure-2019-07-22-all.png]]
+
+[[file:figure-2019-07-22-L1reg.png]]
+
+[[file:figure-2019-07-22.png]]
+
+
+** 19 July 2019
+
+[[file:figure-2019-07-19.R]] makes
+
+[[file:figure-2019-07-19-accuracy.png]]
 
 ** 29 May 2019
 
