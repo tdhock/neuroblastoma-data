@@ -121,11 +121,11 @@ OneSeed <- function(order.csv){
       }
       stopifnot(length(pred.vec)==nrow(set.list$test$outputs))
       pred.mat.list[[model]][, paste(train.size)] <- pred.vec
-      result.list[[paste(size.i, model)]] <- print(data.table(
+      result.list[[paste(size.i, model)]] <- data.table(
         train.size, model,
         accuracy.percent=with(set.list$test, {
           mean(outputs[,1] < pred.vec & pred.vec < outputs[,2])*100
-        })))
+        }))
     }#for(model
   }#for(size.i
   for(model in names(pred.mat.list)){
@@ -140,8 +140,54 @@ OneSeed <- function(order.csv){
 }
 
 pred.not.done <- order.csv.vec[n.pred.vec==0]
-results <- lapply(pred.not.done, OneSeed)
+future::plan("multiprocess")
+results <- future.apply::future_lapply(pred.not.done, OneSeed)
 
+folds.csv.vec <- Sys.glob("data/systematic/cv/*/folds.csv")
+consistent.dt.list <- list()
+for(folds.i in seq_along(folds.csv.vec)){
+  folds.csv <- folds.csv.vec[[folds.i]]
+  folds.dt <- fread(folds.csv)
+  type.dir <- dirname(folds.csv)
+  cv.type <- basename(type.dir)
+  consistent.dt.list[[paste(folds.i)]] <- folds.dt[, {
+    test.seqIDs <- sequenceID
+    fold.pred.csv <- Sys.glob(file.path(
+      type.dir, "testFolds", fold,
+      "*", "*", "models", "*", "predictions.csv"))
+    if(length(fold.pred.csv)==0){
+      data.table()
+    }else{
+      data.table(pred.csv=fold.pred.csv)[, {
+        print(pred.csv)
+        pred.dt <- fread(pred.csv, header=TRUE)
+        only.int <- gsub("[^0-9]", "", names(pred.dt)[-1])
+        pred.cols <- as.integer(only.int)
+        pred.dt[, data.table(
+          cv.type,
+          test.seqIDs=length(test.seqIDs),
+          pred.seqIDs=length(sequenceID),
+          pred.in.test=sum(sequenceID %in% test.seqIDs),
+          pred.not.in.test=sum(!sequenceID %in% test.seqIDs),
+          pred.cols=length(pred.cols),
+          pred.col.min=min(pred.cols),
+          pred.col.max=max(pred.cols)
+        )]
+      }, by=.(pred.csv)]
+    }
+  }, by=.(fold)]
+}
+consistent.dt <- do.call(rbind, consistent.dt.list)
+
+(acc.to.del <- consistent.dt[test.seqIDs != pred.seqIDs, sub("predictions.csv", "accuracy.csv", pred.csv)])
+glob.to.del <- file.path(unique(dirname(dirname(acc.to.del))), "*", "accuracy.csv")
+unlink(glob.to.del)
+Sys.glob(glob.to.del)
+consistent.dt[test.seqIDs != pred.seqIDs & grepl("unsup_BIC_1", pred.csv)]
+
+consistent.dt[pred.in.test != test.seqIDs]
+
+## Old code for cluster...
 unlink("registry", recursive=TRUE)
 reg <- batchtools::makeRegistry("registry")
 batchtools::batchMap(
@@ -176,3 +222,4 @@ for(model.dir.i in seq_along(model.dir.vec)){
   ##system(paste("rm -f", pred.csv.vec[[model.dir.i]]))
   system(paste("git mv", gppred.csv.vec[[model.dir.i]], pred.csv.vec[[model.dir.i]]))
 }
+fo
