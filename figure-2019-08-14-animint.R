@@ -179,10 +179,17 @@ both.one.size <- rbind(
 )[order(type.fold, median)]
 both.one.size[, rank := 1:.N, by=.(type.fold)]
 both.one.size[, rank.y := min(GP.models.only$q25)+(rank-1)*5]
+zoom.rect <- data.table(xmin=2, xmax=30, ymin=75, ymax=100)
+coord.zoom <- zoom.rect[, coord_cartesian(
+  xlim=c(xmin, xmax), ylim=c(ymin, ymax))]
 zoomout <- ggplot()+
   theme_bw()+
   theme_animint(width=450)+
   theme(panel.margin=grid::unit(0, "lines"))+
+  geom_rect(aes(
+    xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax),
+    data=zoom.rect,
+    alpha=0.1)+
   geom_vline(aes(
     xintercept=train.size),
     data=show.vline,
@@ -246,9 +253,6 @@ model.colors <- c(
   unsup_BIC_1="#FB9A99", #lite red
   "#FFFF99", "#B15928" #yellow brown
 )
-zoom.rect <- data.table(xmin=2, xmax=30, ymin=75, ymax=100)
-coord.zoom <- zoom.rect[, coord_cartesian(
-  xlim=c(xmin, xmax), ylim=c(ymin, ymax))]
 viz <- animint(
   title="Gaussian Process models for sample selection",
   overview=ggplot()+
@@ -272,10 +276,6 @@ viz <- animint(
       clickSelects="type.fold"),
   GPzoomout=zoomout+
     ggtitle("Select GP and compare with other GP, all data")+
-    geom_rect(aes(
-      xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax),
-      data=zoom.rect,
-      alpha=0.1)+
     geom_text(aes(
       train.size, rank.y,
       key=selection.short,
