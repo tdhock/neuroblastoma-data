@@ -18,6 +18,7 @@ n.models <- table(seed.dir.vec)
 gp.names <- names(n.models)[n.models==6]
 ##pred.csv.vec[seed.dir.vec %in% gp.names]
 (pred.csv.todo <- pred.csv.vec[!file.exists(acc.csv.vec)])
+options(warn=2)
 
 OnePred <- function(pred.csv.i){
   pred.csv <- pred.csv.todo[[pred.csv.i]]
@@ -40,9 +41,15 @@ OnePred <- function(pred.csv.i){
     csv.xz <- file.path(data.dir, paste0(data.type, ".csv.xz"))
     data.list[[data.type]] <- fread(cmd=paste("xzcat", csv.xz))
   }
-  pred.wide.all <- fread(pred.csv, header=TRUE)
+  pred.header <- fread(pred.csv, header=TRUE, nrows=0)
+  colClasses <- c("character", rep("numeric", length(pred.header)-1))
+  ## sed is used to remove imaginary part from complex numbers in
+  ## pred.csv file e.g. "9970714483190.2+-592693181.288602i"
+  pred.wide.all <- fread(
+    cmd=paste('sed "s/+[^i]*i//g"', pred.csv),
+    header=TRUE, colClasses=colClasses)
   pred.wide <- pred.wide.all[test.seqs, on=.(sequenceID), nomatch=0L]
-  stopifnot(length(test.seqs) == nrow(pred.wide))
+  stopifnot(identical(test.seqs, pred.wide$sequenceID))
   pred.tall <- melt(
     pred.wide,
     id.vars="sequenceID",

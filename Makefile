@@ -1,3 +1,5 @@
+figure-2019-08-14-animint/index.html: figure-2019-08-14-animint.R
+	R --vanilla < $<
 figure-max-auc/index.html: figure-max-auc.R
 	R --vanilla < $<
 figure-random-gp-lin.png: figure-random-gp-lin.R
