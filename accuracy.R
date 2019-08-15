@@ -1,12 +1,12 @@
 source("packages.R")
 
-if(FALSE){#copy gpppredicitons.csv to mdoels/GP/predictions.csv
-  gppred.csv.vec <- Sys.glob(
-    "data/*/cv/*/testFolds/*/*/*/gppredictions.csv")
-  gp.dir.csv.vec <- file.path(dirname(gppred.csv.vec), "models", "GP", "predictions.csv")
-  file.exists(gp.dir.csv.vec)
-  for(d in unique(dirname(gp.dir.csv.vec)))dir.create(d, recursive=TRUE)
-  file.copy(gppred.csv.vec, gp.dir.csv.vec)
+(gppred.csv.vec <- Sys.glob(
+  "data/*/cv/*/testFolds/*/*/*/gppredictions.csv"))
+for(gppred.csv in gppred.csv.vec){
+  gp.dir.csv <- file.path(
+    dirname(gppred.csv), "models", "GP", "predictions.csv")
+  dir.create(dirname(gp.dir.csv), showWarnings=FALSE, recursive=TRUE)
+  system(paste("git mv -f", gppred.csv, gp.dir.csv))
 }
 
 pred.csv.vec <- Sys.glob(

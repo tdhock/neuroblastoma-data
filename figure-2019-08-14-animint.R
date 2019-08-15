@@ -128,3 +128,4 @@ viz <- animint(
     coord_cartesian(xlim=c(2, 20), ylim=c(70, 100))
 )
 
+animint2gist(viz)
