@@ -1,8 +1,13 @@
 Neuroblastoma data and other supervised penalty learning benchmarks
 
+** Citations
+
 This repo provides xz-compressed text/csv files of several benchmark
-data sets involving censored regression for [[http://proceedings.mlr.press/v28/hocking13.html][supervised penalty
-learning]].
+data sets involving censored regression for supervised penalty function learning for changepoint detection,
+- which was first described in the context of DNA copy number profile data at [[http://proceedings.mlr.press/v28/hocking13.html][ICML'13]]. If you use data/systematic or data/detailed please cite this paper.
+- we also use supervised penalty function learning for ChIP-seq peak detection, as described in our [[https://academic.oup.com/bioinformatics/article/33/4/491/2608653][Bioinformatics'17]] paper. If you use any of the other data sets please cite this paper.
+
+** Standard format for each data set
 
 There are two neuroblastoma
 data sets (also available on the [[https://cloud.r-project.org/web/packages/neuroblastoma/][CRAN]]), and several ChIP-seq data sets
