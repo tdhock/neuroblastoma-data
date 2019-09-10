@@ -121,6 +121,28 @@ Whereas the neuroblastoma data sets (data/detailed and data/systematic)
 are changepoint detection problems for DNA copy number profiles, these
 other data sets are ChIP-seq peak detection problems.
 
+** 10 Sep 2019
+
+[[file:signal.list.annotation.sets.R]] makes
+
+#+BEGIN_SRC R
+> labels.wide
+                    label.set  pid.chr 1breakpoint 0breakpoints n.data
+   1:      lymphoma.mkatayama  30001.1           0            1   3973
+   2:      lymphoma.mkatayama 30001.10           0            2   1683
+   3:      lymphoma.mkatayama 30001.11           0            1   2245
+   4:      lymphoma.mkatayama 30001.12           0            1   2132
+   5:      lymphoma.mkatayama 30001.13           0            1   1006
+  ---                                                                 
+4468:     medulloblastoma.tdh  20138.2          18            0   5937
+4469:     medulloblastoma.tdh  20165.2          20            0   5937
+4470: neuroblastoma.chiba.tdh  20004.2          23            0  22215
+4471:     medulloblastoma.tdh  20165.9          25            0   3012
+4472:    neuroblastoma.dr.tdh  20104.2          26            0 153662
+> ggplot()+geom_point(aes(position, logratio), data=data.table(signal.list[["20165.9"]]))
+> 
+#+END_SRC
+
 ** 15 Aug 2019
 [[file:figure-2019-08-14-animint.R]] makes
 http://jan.ucc.nau.edu/~th798/viz/2019-08-15-GP-sample-selection/
