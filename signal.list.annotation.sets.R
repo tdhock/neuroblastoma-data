@@ -1,3 +1,6 @@
+if(!file.exists("signal.list.annotation.sets.RData")){
+  download.file("http://members.cbio.ensmp.fr/~thocking/neuroblastoma/signal.list.annotation.sets.RData", "signal.list.annotation.sets.RData")
+}
 (objs <- load("signal.list.annotation.sets.RData"))
 library(data.table)
 size.vec <- sapply(signal.list, nrow)
