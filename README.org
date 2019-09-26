@@ -126,6 +126,10 @@ Whereas the neuroblastoma data sets (data/detailed and data/systematic)
 are changepoint detection problems for DNA copy number profiles, these
 other data sets are ChIP-seq peak detection problems.
 
+** 26 Sep 2019
+
+[[http://members.cbio.mines-paristech.fr/~thocking/data/SegAnnDB-pauline-data.tgz][Various data sets]] have 23 labeled chromosomes with between 11 and 56 labels per chrom.
+
 ** 10 Sep 2019
 
 [[file:signal.list.annotation.sets.R]] makes
