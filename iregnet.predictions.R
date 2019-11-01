@@ -1,24 +1,27 @@
 source("packages.R")
 
-testFold.csv.vec <- Sys.glob(file.path(
+testFold.dir.vec <- Sys.glob(file.path(
   "data", "*", "cv", "*", "testFolds",
   "*"))
 
-n.pred.vec <- sapply(testFold.csv.vec, function(testFold.csv){
-  path <- file.path(dirname(testFold.csv), "models", "*", "predictions.csv")
+n.pred.vec <- sapply(testFold.dir.vec, function(testFold.dir){
+  path <- file.path(dirname(testFold.dir), "models", "*", "predictions.csv")
   length(Sys.glob(path))
 })
 table(n.pred.vec)
 
-OneFold <- function(testFold.csv){
+OneFold <- function(testFold.dir){
   library(data.table)
-  test.fold <- as.integer(basename(testFold.csv))
-  cv.type.dir <- dirname(dirname(testFold.csv))
+  test.fold <- as.integer(basename(testFold.dir))
+  cv.type.dir <- dirname(dirname(testFold.dir))
   data.dir <- dirname(dirname(cv.type.dir))
+  folds.csv <- file.path(cv.type.dir, "folds.csv")
+  folds.dt <- fread(folds.csv)
   data.list <- list()
   for(data.type in c("inputs", "outputs")){
     csv.xz <- file.path(data.dir, paste0(data.type, ".csv.xz"))
     dt <- fread(cmd=paste("xzcat", csv.xz))
+    stopifnot(nrow(dt) == nrow(folds.dt))
     m <- as.matrix(dt[, -1, with=FALSE])
     rownames(m) <- dt$sequenceID
     data.list[[data.type]] <- m
@@ -34,14 +37,9 @@ OneFold <- function(testFold.csv){
   }
   keep.inputs <- apply(is.finite(data.list$inputs), 2, all)
   data.list$inputs <- data.list$inputs[, keep.inputs, drop=FALSE]
-  #order.dt <- fread(testFold.csv)
-  testFold.dt <- fread(testFold.csv)
-  all.id.vec <- rownames(data.list$inputs)
   id.list <- list(
-    #train=order.dt$sequenceID,
-    train=testFold.dt$sequenceID,
-    #test=all.id.vec[!all.id.vec %in% order.dt$sequenceID])
-    test=all.id.vec[!all.id.vec %in% testFold.dt$sequenceID])
+    train=folds.dt[fold != test.fold, sequenceID],
+    test=folds.dt[fold == test.fold, sequenceID])
   set.list <- list()
   for(set.name in names(id.list)){
     set.id.vec <- id.list[[set.name]]
@@ -50,13 +48,28 @@ OneFold <- function(testFold.csv){
     })
   }
 
-  #### Stopped HERE
-  
-  
   result.list <- list()
   pred.mat.list <- list()
-  size.i.vec <- seq_along(train.size.vec)
-  ##size.i.vec <- length(train.size.vec)
+  
+  ####
+  
+  fit.list <- list()
+  scale.i.list <- list( estimated = list( init= NA, estimate = TRUE),
+                        fixed = list( init= 1, estimate = FALSE) )
+
+  X.train <- matrix(set.list$train$inputs, nrow(set.list$train$inputs), ncol(set.list$train$inputs))
+  Y.train <-  matrix( set.list$train$outputs , nrow(set.list$train$outputs) , ncol(set.list$train$outputs))
+  
+  for( model.type in c( "gaussian", "logistic", "extreme_value")){
+    for( scale.type in scale.i.list){
+      fit.list[length(fit.list) + 1] <-  cv.iregnet(X.train, Y.train , family = model.type, 
+                     scale_init= scale.type$init ,estimate_scale= scale.type$estimate)
+    }
+  }
+  
+
+  ######
+  
   for(size.i in size.i.vec){
     train.size <- train.size.vec[[size.i]]
     maybe.both.inf <- set.list$train$outputs[1:train.size, ]
@@ -185,33 +198,6 @@ consistent.dt[test.seqIDs != pred.seqIDs & grepl("unsup_BIC_1", pred.csv)]
 consistent.dt[pred.in.test != test.seqIDs]
 
 
-
-
-
-
-
-
-
-folds.csv.vec <- Sys.glob("data/*/cv/*/folds.csv")
-
-fit.list <- list()
-scale.i.list <- list( estimated = list( init= "NA", estimate = TRUE), fixed = list( init= 1, estimate = FALSE) )
-model.list <- list( "guassian", "logistic", "extreme_value")
-
-
-
-table(n.pred.vec)
-#take in test fold
-#one fold
-
-
-
-#for( model.type in model.i.list){
-#  for( scale.type in scale.i.list){
-#    fit.list <- c( fit.list , cv.iregnet(X.train, Y.train , family = model.type, 
-#                   scale_init= scale.type$init ,estimate_scale = scale.type$estimate))  
-#  }
-#}
 
 
 ## fwrite(result, iregnet.csv)
