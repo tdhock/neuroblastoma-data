@@ -10,6 +10,9 @@ n.pred.vec <- sapply(testFold.dir.vec, function(testFold.dir){
 })
 table(n.pred.vec)
 
+# test data dir for OneFold function
+testFold.dir <- testFold.dir.vec[[1]]
+
 OneFold <- function(testFold.dir){
   library(data.table)
   test.fold <- as.integer(basename(testFold.dir))
@@ -50,6 +53,7 @@ OneFold <- function(testFold.dir){
 
   result.list <- list()
   pred.mat.list <- list()
+  pred.list <- list()
   
   ####
   
@@ -60,98 +64,52 @@ OneFold <- function(testFold.dir){
   X.train <- matrix(set.list$train$inputs, nrow(set.list$train$inputs), ncol(set.list$train$inputs))
   Y.train <-  matrix( set.list$train$outputs , nrow(set.list$train$outputs) , ncol(set.list$train$outputs))
   
-  for( model.type in c( "gaussian", "logistic", "extreme_value")){
+  
+  for( model.type in c( "gaussian", "logistic")){
     for( scale.type in scale.i.list){
-      fit.list[length(fit.list) + 1] <-  cv.iregnet(X.train, Y.train , family = model.type, 
+      stopifnot( nrow(X.train) == nrow(Y.train))
+      fit.list[[length(fit.list) + 1]] <-  cv.iregnet(X.train, Y.train , family = model.type, 
                      scale_init= scale.type$init ,estimate_scale= scale.type$estimate)
     }
   }
+  names(fit.list) <- c( "gaus_est" , "gaus_fixed" , "log_est" , "log_fixed")
   
+  for( fit in fit.list){
+    pred.list[[length(pred.list) + 1]] <- predict(fit , set.list$test$inputs)
+  }
+  names(pred.list) <- c( "iregnet_gaus_est" , "iregnet_gaus_fixed" , "iregnet_log_est" , "iregnet_log_fixed")
 
-  ######
   
-  for(size.i in size.i.vec){
-    train.size <- train.size.vec[[size.i]]
-    maybe.both.inf <- set.list$train$outputs[1:train.size, ]
-    not.both.inf <- apply(is.finite(maybe.both.inf), 1, any)
-    train.names <- sort(names(not.both.inf)[not.both.inf])
-    y.train <- set.list$train$outputs[train.names, , drop=FALSE]
-    X.train <- set.list$train$inputs[train.names, , drop=FALSE]
-    (finite.limits <- colSums(is.finite(y.train)))
-    limit.type <- ifelse(
-      is.finite(y.train[,1]), ifelse(
-        is.finite(y.train[,2]), "both", "lower"), "upper")
-    limit.tab <- table(limit.type)
-    one.pred <- function(x)rep(x, nrow(set.list$test$inputs))
-    na.pred <- one.pred(NA)
-    X.logn <- X.train[, "log2.n", drop=FALSE]
-    pred.list <- list(
-      baseline_0=one.pred(baseline.df$pred[train.size]),
-      unsup_BIC_1=as.numeric(set.list$test$inputs[, "log2.n"]),
-      unreg_linear_1=if(all(0 < finite.limits) && 1 < length(table(X.logn))){
-        fit <- penaltyLearning::IntervalRegressionUnregularized(
-          X.logn, y.train, verbose=0)
-        as.numeric(fit$predict(set.list$test$inputs))
-      }else{
-        na.pred
-      },
-      unreg_linear_2=if(all(0 < finite.limits)){
-        fit <- penaltyLearning::IntervalRegressionUnregularized(
-          X.train[, c("log2.n", "log.hall")], y.train,
-          verbose=0)
-        as.numeric(fit$predict(set.list$test$inputs))
-      }else{
-        na.pred
-      },
-      L1reg_linear_all=if(
-        any(finite.limits < 2) || any(limit.tab < 2) || nrow(y.train) < 4){
-        na.pred
-      }else{
-        n.folds <- min(limit.tab, 5, floor(nrow(y.train)/2))
-        fold.vec <- rep(NA, l=nrow(y.train))
-        set.seed(1)
-        for(l in names(limit.tab)){
-          is.l <- limit.type == l
-          fold.vec[is.l] <- sample(rep(1:n.folds, l=sum(is.l)))
-        }
-        fit <- penaltyLearning::IntervalRegressionCV(
-          X.train, y.train, min.observations=nrow(y.train),
-          verbose=0,
-          fold.vec=fold.vec)
-        as.numeric(fit$predict(set.list$test$inputs))
-      })
     for(model in names(pred.list)){
       pred.vec <- pred.list[[model]]
       if(is.null(pred.mat.list[[model]])){
         pred.mat.list[[model]] <- matrix(
-          NA, length(pred.vec), length(train.size.vec),
+          NA, length(pred.vec), ncol(pred.list[[model]]),
           dimnames=list(
-            sequenceID=rownames(set.list$test$inputs),
-            train.size=train.size.vec))
+            sequenceID=rownames(set.list$test$inputs) , colnames(pred.list[[model]])))
       }
       stopifnot(length(pred.vec)==nrow(set.list$test$outputs))
-      pred.mat.list[[model]][, paste(train.size)] <- pred.vec
-      result.list[[paste(size.i, model)]] <- data.table(
-        train.size, model,
+      pred.mat.list[[model]] <- pred.vec
+      result.list[[paste(model)]] <- data.table(
+         model,
         accuracy.percent=with(set.list$test, {
           mean(outputs[,1] < pred.vec & pred.vec < outputs[,2])*100
         }))
-    }#for(model
-  }#for(size.i
+    }
   for(model in names(pred.mat.list)){
     pred.mat <- pred.mat.list[[model]]
     pred.dt <- data.table(sequenceID=rownames(pred.mat), pred.mat)
-    pred.csv <- file.path(seed.dir, "models", model, "predictions.csv")
+    pred.csv <- file.path(testFold.dir,"randomTrainOrderings", test.fold , "models", model, "predictions.csv")
     dir.create(dirname(pred.csv), showWarnings=FALSE, recursive=TRUE)
     fwrite(pred.dt, pred.csv)
   }
   (result <- do.call(rbind, result.list))
-  ## fwrite(result, baseline.csv)
+  n.pred.vec[[testFold.dir]] <- 1
 }
 
-pred.not.done <- order.csv.vec[n.pred.vec==0]
+pred.not.done <- testFold.dir.vec[n.pred.vec==0]
 future::plan("multiprocess")
-results <- future.apply::future_lapply(pred.not.done, OneSeed)
+results <- future.apply::future_lapply(pred.not.done, OneFold)
 
 folds.csv.vec <- Sys.glob("data/systematic/cv/*/folds.csv")
 consistent.dt.list <- list()
