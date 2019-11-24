@@ -98,10 +98,12 @@ OneFold <- function(testFold.dir){
     }
   for(model in names(pred.mat.list)){
     pred.mat <- pred.mat.list[[model]]
-    pred.dt <- data.table(sequenceID=rownames(pred.mat), pred.mat)
-    pred.csv <- file.path(testFold.dir,"randomTrainOrderings", test.fold , "models", model, "predictions.csv")
+    pred.dt <- data.table(sequenceID=rownames(pred.mat), pred.log.lambda=pred.mat[,1])
+    for( fold in c( 1 , 2 , 3 , 4 , 5)){
+    pred.csv <- file.path(testFold.dir,"randomTrainOrderings", fold , "models", model, "predictions.csv")
     dir.create(dirname(pred.csv), showWarnings=FALSE, recursive=TRUE)
     fwrite(pred.dt, pred.csv)
+   }
   }
   (result <- do.call(rbind, result.list))
   n.pred.vec[[testFold.dir]] <- 1

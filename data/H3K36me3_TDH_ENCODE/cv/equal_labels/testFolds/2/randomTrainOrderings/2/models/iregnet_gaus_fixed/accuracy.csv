@@ -1,0 +1,2 @@
+train.size,percent.correct.labels,auc,N.test,percent.correct.intervals
+,95.7264957264957,0.960541310541311,13,92.3076923076923
