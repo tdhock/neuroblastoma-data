@@ -4,8 +4,30 @@ Neuroblastoma data and other supervised penalty learning benchmarks
 
 This repo provides xz-compressed text/csv files of several benchmark
 data sets involving censored regression for supervised penalty function learning for changepoint detection,
-- which was first described in the context of DNA copy number profile data at [[http://proceedings.mlr.press/v28/hocking13.html][ICML'13]]. If you use data/systematic or data/detailed please cite this paper.
-- we also use supervised penalty function learning for ChIP-seq peak detection, as described in our [[https://academic.oup.com/bioinformatics/article/33/4/491/2608653][Bioinformatics'17]] paper. If you use any of the other data sets please cite this paper.
+- which was first described in the context of DNA copy number profile data at [[http://proceedings.mlr.press/v28/hocking13.html][ICML'13]]. If you use data/systematic or data/detailed please cite this paper:
+```
+@inproceedings{Rigaill2013,
+  title={Learning sparse penalties for change-point detection using max margin interval regression},
+  author={ Rigaill, Guillem and Hocking, Toby and Vert, Jean-Philippe and Bach, Francis},
+  booktitle={Proc. 30th ICML},
+  pages={172--180},
+  year={2013}
+}
+```
+- we also use supervised penalty function learning for ChIP-seq peak detection, as described in our [[https://academic.oup.com/bioinformatics/article/33/4/491/2608653][Bioinformatics'17]] paper. If you use any of the other data sets please cite this paper:
+```
+@article{Hocking2017,
+    author = {Hocking, Toby Dylan and Goerner-Potvin, Patricia and Morin, Andreanne and Shao, Xiaojian and Pastinen, Tomi and Bourque, Guillaume},
+    title = "{Optimizing ChIP-seq peak detectors using visual labels and supervised machine learning}",
+    journal = {Bioinformatics},
+    volume = {33},
+    number = {4},
+    pages = {491-499},
+    year = {2016},
+    month = {11},
+    issn = {1367-4803},
+}
+```
 
 ** Standard format for each data set
 
