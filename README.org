@@ -5,7 +5,7 @@ Neuroblastoma data and other supervised penalty learning benchmarks
 This repo provides xz-compressed text/csv files of several benchmark
 data sets involving censored regression for supervised penalty function learning for changepoint detection,
 - which was first described in the context of DNA copy number profile data at [[http://proceedings.mlr.press/v28/hocking13.html][ICML'13]]. If you use data/systematic or data/detailed please cite this paper:
-```
+#+BEGIN_SRC bibtex
 @inproceedings{Rigaill2013,
   title={Learning sparse penalties for change-point detection using max margin interval regression},
   author={ Rigaill, Guillem and Hocking, Toby and Vert, Jean-Philippe and Bach, Francis},
@@ -13,9 +13,10 @@ data sets involving censored regression for supervised penalty function learning
   pages={172--180},
   year={2013}
 }
-```
+#+END_SRC
+
 - we also use supervised penalty function learning for ChIP-seq peak detection, as described in our [[https://academic.oup.com/bioinformatics/article/33/4/491/2608653][Bioinformatics'17]] paper. If you use any of the other data sets please cite this paper:
-```
+#+BEGIN_SRC bibtex
 @article{Hocking2017,
     author = {Hocking, Toby Dylan and Goerner-Potvin, Patricia and Morin, Andreanne and Shao, Xiaojian and Pastinen, Tomi and Bourque, Guillaume},
     title = "{Optimizing ChIP-seq peak detectors using visual labels and supervised machine learning}",
@@ -27,7 +28,7 @@ data sets involving censored regression for supervised penalty function learning
     month = {11},
     issn = {1367-4803},
 }
-```
+#+END_SRC
 
 ** Standard format for each data set
 
