@@ -1,4 +1,5 @@
 source("packages.R")
+library(iregnet)
 
 testFold.dir.vec <- Sys.glob(file.path(
   "data", "*", "cv", "*", "testFolds",
