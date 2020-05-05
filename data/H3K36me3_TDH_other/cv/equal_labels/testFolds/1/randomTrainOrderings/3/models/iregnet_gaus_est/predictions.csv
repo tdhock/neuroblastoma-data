@@ -1,0 +1,17 @@
+sequenceID,pred.log.lambda
+H3K36me3_TDH_other/samples/kidney/McGill0023/problems/chr16:60000-8636921,10.6757864988586
+H3K36me3_TDH_other/samples/kidney/McGill0023/problems/chr16:8686921-32000000,10.59274464297
+H3K36me3_TDH_other/samples/kidneyCancer/McGill0022/problems/chr16:60000-8636921,10.7416472811151
+H3K36me3_TDH_other/samples/kidneyCancer/McGill0022/problems/chr16:8686921-32000000,10.6557419129545
+H3K36me3_TDH_other/samples/skeletalMuscleCtrl/McGill0019/problems/chr16:60000-8636921,10.5240203484415
+H3K36me3_TDH_other/samples/skeletalMuscleCtrl/McGill0019/problems/chr16:8686921-32000000,10.589881130698
+H3K36me3_TDH_other/samples/skeletalMuscleCtrl/McGill0036/problems/chr16:60000-8636921,10.589881130698
+H3K36me3_TDH_other/samples/skeletalMuscleCtrl/McGill0036/problems/chr16:8686921-32000000,10.7044216215788
+H3K36me3_TDH_other/samples/skeletalMuscleCtrl/McGill0037/problems/chr16:60000-8636921,10.589881130698
+H3K36me3_TDH_other/samples/skeletalMuscleCtrl/McGill0037/problems/chr16:8686921-32000000,10.6242432779622
+H3K36me3_TDH_other/samples/skeletalMuscleMD/McGill0012/problems/chr16:60000-8636921,10.4782041520891
+H3K36me3_TDH_other/samples/skeletalMuscleMD/McGill0012/problems/chr16:8686921-32000000,10.4982487379933
+H3K36me3_TDH_other/samples/skeletalMuscleMD/McGill0013/problems/chr16:60000-8636921,10.7731459161074
+H3K36me3_TDH_other/samples/skeletalMuscleMD/McGill0013/problems/chr16:8686921-32000000,10.6213797656902
+H3K36me3_TDH_other/samples/skeletalMuscleMD/McGill0016/problems/chr16:60000-8636921,10.6586054252265
+H3K36me3_TDH_other/samples/skeletalMuscleMD/McGill0016/problems/chr16:8686921-32000000,10.6242432779622
